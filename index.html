@@ -1,0 +1,2082 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Moodboardy — A home for your next obsession</title>
+<meta name="theme-color" content="#f7f1e7">
+<meta name="description" content="A home for your next obsession. Collect images, stray thoughts and things worth keeping on infinite canvases, saved only in your browser.">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<link rel="apple-touch-icon" href="assets/moodboardy.png">
+
+<!-- Tailwind CSS da CDN -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: { sans: ['Nunito Sans','ui-sans-serif','system-ui','-apple-system','sans-serif'], display: ['Fraunces','Georgia','serif'] },
+        colors: {
+          white: '#fffcf6',
+          slate: { 50:'#faf6ef', 100:'#f2ebe0', 200:'#e3d9c9', 300:'#c9bfad', 400:'#938e7d', 500:'#716f5f', 600:'#535e4e', 700:'#384f40', 800:'#254636', 900:'#153d2e' },
+          indigo: { 50:'#edf3ec', 100:'#e0ebdc', 200:'#bfd4bb', 300:'#99b69a', 400:'#74967a', 500:'#416e50', 600:'#254e3b', 700:'#1b402f', 800:'#163628', 900:'#102b21' },
+          violet: { 50:'#eef2fb', 100:'#dce6fa', 500:'#7098df', 600:'#527fcb' },
+          rose: { 50:'#fff0e9', 100:'#ffe1d5', 200:'#ffc3ae', 500:'#df684b', 600:'#b94930' },
+        },
+        boxShadow: {
+          soft:  '0 5px 16px -6px rgb(75 58 30 / .16), 0 1px 3px rgb(75 58 30 / .05)',
+          panel: '0 14px 42px -14px rgb(75 58 30 / .22), 0 3px 10px -3px rgb(75 58 30 / .08)',
+        }
+      }
+    }
+  }
+</script>
+
+<!-- Tipografia: morbida e leggibile, con titoli editoriali -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Nunito+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<!-- Logica app (prima di Alpine) -->
+<script>
+/* ------------------------------------------------------------------ */
+/*  Utility globali                                                    */
+/* ------------------------------------------------------------------ */
+const MB_NOTES = ['#FFD2B9','#F8DF94','#C9D9BB','#C5D8F4','#F2C9C8','#ECE2CF']; // carta, pesca, burro, salvia e blu
+const MB_INK   = ['#254E3B','#5488CD','#D5684B','#63805D','#BA831C','#8D695A']; // inchiostri del logo
+const MB_IMG_RE = /\.(png|jpe?g|gif|webp|avif|svg)([?#].*)?$/i;
+
+const MB_EMOJIS = [
+'😀','😃','😄','😁','😆','😅','🤣','😂','🙂','🙃','😉','😊','😇','🥰','😍','🤩','😘','😋','😜','🤪',
+'🤨','🧐','🤓','😎','🥳','😏','😒','😞','😔','😟','🥺','😢','😭','😤','😠','🤯','😳','🥵','🥶','😱',
+'🤗','🤔','🤭','🤫','😬','🙄','😲','😴','🤤','😵','🥴','🤢','😷','🤒','🤕','🤑','🤠','😈','🤡','👻',
+'👋','👌','✌️','🤞','🤟','🤘','🤙','👈','👉','👆','👇','👍','👎','✊','👊','👏','🙌','🤝','🙏','💪',
+'❤️','🧡','💛','💚','💙','💜','🖤','🤍','💔','❣️','💕','💞','💖','💘','💝','💯','💢','💥','💫','🔥',
+'⭐','🌟','✨','⚡','🌈','☀️','🌙','☁️','❄️','💧','🌊','🍀','🌿','🌸','🌷','🌹','🌻','🍁','🍂','🌴',
+'💡','🎯','🚀','🛸','🎈','🎉','🎊','🏆','🥇','🎁','🔔','📣','💬','💭','👀','🧠','📝','📒','📌','📎',
+'📊','📈','📉','🗓️','⏰','⏳','🔍','🔎','🔑','🔒','🧩','🎲','🎨','🎬','🎤','🎧','🎸','🎮','📷','💻',
+'🖥️','📱','⌚','✂️','🗑️','📦','🛒','💰','💎','⚖️','🔧','🔨','⚙️','🧰','🧲','🧪','🧭','🗺️','🏠','🏢',
+'🚗','✈️','🚢','🚲','⛵','🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🦁','🐮','🐷','🐸','🐵',
+'🐧','🦄','🐝','🦋','🐢','🐙','🦀','🍕','🍔','🍟','🍿','🍩','🍪','🎂','🍰','🧁','🍦','☕','🍵','🧊',
+'🍺','🥂','✅','❌','⚠️','❗','❓','➕','➖','✖️','🔴','🟠','🟡','🟢','🔵','🟣','⚫','⚪','🔺','🔻',
+'🔷','🔶','▶️','⏸️','🔁','🔄','⤴️','⤵️','➡️','⬅️','⬆️','⬇️','↗️','↘️','↖️','↙️','↔️','↕️','🟦','🟥'
+];
+
+const uid = () => (crypto.randomUUID ? crypto.randomUUID() : 'i'+Date.now().toString(36)+Math.random().toString(36).slice(2,9));
+const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
+
+function imgInfo(src){
+  return new Promise((res, rej) => {
+    const im = new Image();
+    im.crossOrigin = 'anonymous';
+    im.onload  = () => res({ w: im.naturalWidth, h: im.naturalHeight, el: im });
+    im.onerror = rej;
+    im.src = src;
+  });
+}
+
+/* ------------------------------------------------------------------ */
+/*  Componente Alpine: la moodboard                                    */
+/* ------------------------------------------------------------------ */
+function moodboardApp(){
+  return {
+    NOTES: MB_NOTES, INK: MB_INK, EMOJIS: MB_EMOJIS,
+
+    /* --- stato --- */
+    title: 'My moodboard',
+    items: [],                 // tutti gli elementi della board (coordinate "mondo")
+    camera: { x: 0, y: 0, z: 1 },
+    selection: [],             // id selezionati
+    editingId: null,           // id dell'elemento in modifica testo
+    tool: 'select',            // select | arrow | line
+    drag: null,                // operazione pointer in corso
+    pointers: new Map(),       // pointer attivi (per il pinch)
+    pinch: null,
+    spaceDown: false,
+    history: [], future: [],   // undo / redo
+    saved: true, _saveT: null, _camT: null,
+    boards: [], activeBoardId: null,
+    draggingBoardId: null,
+    tabDrag: null, _suppressTabClickUntil: 0,
+    saveError: false,
+    renameBox: null,
+    onboarding: false,
+    toasts: [],
+    emojiOpen: false, shapesOpen: false, menuOpen: false, helpOpen: false,
+    confirmBox: null,          // {msg, fn}
+    _lastTap: null,            // (legacy) rilevamento doppio click
+    _lastClick: null,          // ultimo click pulito (per doppio click manuale)
+    _editAt: 0,                // debounce dell'editor universale
+    _linkT: null,              // apertura ritardata dei link (secondo click)
+    emojiEditId: null,         // emoji da sostituire (picker aperto in modalità modifica)
+    imageReplaceId: null,      // immagine da sostituire (file picker)
+    captionEditId: null,       // didascalia dell'immagine in modifica
+    editLinkBox: null,         // {id, url} modifica di una card link
+
+    /* =========================== INIT =========================== */
+    async init(){
+      this.loadLocal();
+      window.addEventListener('paste', e => this.onPaste(e));
+      window.addEventListener('keydown', e => this.onKey(e));
+      window.addEventListener('keyup',  e => { if (e.code === 'Space') this.spaceDown = false; });
+      // al lasciare la pagina (refresh, chiusura, navigazione) salva subito posizione/zoom
+      window.addEventListener('pagehide', () => this.flushSave());
+      document.addEventListener('visibilitychange', () => { if (document.hidden) this.flushSave(); });
+      // misura i testi (ingombro reale) e rifalla quando il font è caricato
+      this.measureAllTexts();
+      if (document.fonts && document.fonts.ready){
+        document.fonts.ready.then(() => this.measureAllTexts());
+      }
+    },
+
+    loadLocal(){
+      try {
+        const raw = localStorage.getItem('mb.workspace.v2');
+        if (raw) {
+          const workspace = JSON.parse(raw);
+          if (!Array.isArray(workspace.boards) || !workspace.boards.length) throw new Error('invalid_workspace');
+          this.boards = workspace.boards.map(b => this.makeBoard(b));
+          this.activateBoard(this.boards.find(b => b.id === workspace.activeBoardId) || this.boards[0]);
+          return;
+        }
+        const legacy = localStorage.getItem('mb.board.v1');
+        this.boards = [this.makeBoard(legacy ? JSON.parse(legacy) : {})];
+        this.onboarding = !localStorage.getItem('mb.seen.v1');
+      } catch(e) {
+        this.boards = [this.makeBoard({})];
+        this.toast('Local data could not be read or storage is unavailable. Import a JSON backup if needed.', '⚠️');
+      }
+      this.activateBoard(this.boards[0]);
+    },
+    makeBoard(d = {}){
+      return { id: typeof d.id === 'string' ? d.id : uid(),
+        title: typeof d.title === 'string' ? d.title.slice(0,60) : 'New canvas',
+        items: this.sanitizeItems(d.items), camera: this.validCamera(d.camera) };
+    },
+    validCamera(c){
+      return c && [c.x,c.y,c.z].every(Number.isFinite) && c.z > 0
+        ? { x:c.x, y:c.y, z:clamp(c.z,.08,4) } : { x:0, y:0, z:1 };
+    },
+    syncBoard(){
+      const b = this.boards.find(b => b.id === this.activeBoardId);
+      if (b){ b.title = this.title; b.items = this.items; b.camera = { ...this.camera }; }
+    },
+    activateBoard(b){
+      this.cancelLinkOpen();
+      this.activeBoardId = b.id; this.title = b.title; this.items = b.items;
+      this.camera = { ...b.camera };
+      this.selection = []; this.history = []; this.future = [];
+      this.editingId = null; this.captionEditId = null; this.editLinkBox = null;
+      this.imageReplaceId = null; this.drag = null; this.pinch = null;
+      this.pointers.clear(); this.spaceDown = false; this._lastClick = null;
+      this.closePops();
+      this.$nextTick(() => this.measureAllTexts());
+    },
+    switchBoard(id){
+      if (id === this.activeBoardId) return;
+      const b = this.boards.find(b => b.id === id); if (!b) return;
+      document.activeElement?.blur();
+      this.flushSave(); this.activateBoard(b); this.flushSave();
+    },
+    newBoard(data = {}){
+      document.activeElement?.blur();
+      this.flushSave();
+      const b = this.makeBoard(data); b.id = uid();
+      this.boards.push(b); this.activateBoard(b); this.flushSave();
+    },
+    renameBoard(id){
+      const b = this.boards.find(b => b.id === id);
+      if (b) this.renameBox = { id, title: id === this.activeBoardId ? this.title : b.title };
+    },
+    onTabPointerDown(e, id){
+      if (e.button === 1) {
+        e.preventDefault(); e.stopPropagation();
+        const board = this.boards.find(b => b.id === id);
+        const items = id === this.activeBoardId ? this.items : board?.items;
+        this.closeBoard(id, !!items?.length);
+        return;
+      }
+      if (e.button !== 0 || !e.target.closest('[role="tab"]')) return;
+      const rect = e.currentTarget.getBoundingClientRect();
+      this.tabDrag = { id, pointerId:e.pointerId, startX:e.clientX, startY:e.clientY,
+        x:e.clientX, y:e.clientY, offsetX:e.clientX-rect.left, offsetY:e.clientY-rect.top,
+        width:rect.width, title:this.boards.find(b => b.id === id)?.title || '',
+        order:this.boards.map(b => b.id) };
+    },
+    onTabPointerMove(e){
+      const d = this.tabDrag;
+      if (!d || d.pointerId !== e.pointerId) return;
+      if (!this.draggingBoardId && Math.hypot(e.clientX-d.startX,e.clientY-d.startY) < 5) return;
+      if (!this.draggingBoardId) {
+        this.draggingBoardId = d.id; this.closePops();
+        document.body.setPointerCapture(e.pointerId);
+      }
+      e.preventDefault();
+      d.x = e.clientX; d.y = e.clientY;
+      const strip = this.$refs.boardTabs;
+      const bounds = strip.getBoundingClientRect();
+      if (e.clientX < bounds.left+32) strip.scrollLeft -= 18;
+      if (e.clientX > bounds.right-32) strip.scrollLeft += 18;
+      if (e.clientY < bounds.top-50 || e.clientY > bounds.bottom+50) return;
+      for (const tab of strip.querySelectorAll('[data-board-tab]')) {
+        const id = tab.dataset.boardTab;
+        if (id === d.id) continue;
+        const rect = tab.getBoundingClientRect();
+        if (e.clientX < rect.left || e.clientX > rect.right) continue;
+        const from = this.boards.findIndex(b => b.id === d.id);
+        const target = this.boards.findIndex(b => b.id === id);
+        if ((target > from && e.clientX > rect.left+rect.width/2) ||
+            (target < from && e.clientX < rect.left+rect.width/2)) {
+          this.moveBoard(d.id, id, target > from, false);
+        }
+        break;
+      }
+    },
+    endBoardDrag(cancel = false){
+      const d = this.tabDrag;
+      if (d && this.draggingBoardId) {
+        if (cancel) this.boards.sort((a,b) => d.order.indexOf(a.id)-d.order.indexOf(b.id));
+        this._suppressTabClickUntil = Date.now()+300;
+        if (document.body.hasPointerCapture(d.pointerId)) document.body.releasePointerCapture(d.pointerId);
+        this.flushSave();
+      }
+      this.draggingBoardId = null; this.tabDrag = null;
+    },
+    clickBoard(id){ if (Date.now() >= this._suppressTabClickUntil) this.switchBoard(id); },
+    tabPreviewStyle(){
+      const d = this.tabDrag;
+      return d ? { left:(d.x-d.offsetX)+'px', top:(d.y-d.offsetY)+'px', width:d.width+'px' } : {};
+    },
+    moveBoard(id, targetId, after = false, save = true){
+      if (id === targetId) return;
+      const from = this.boards.findIndex(b => b.id === id);
+      if (from < 0 || !this.boards.some(b => b.id === targetId)) return;
+      const [board] = this.boards.splice(from,1);
+      const target = this.boards.findIndex(b => b.id === targetId);
+      this.boards.splice(target + (after ? 1 : 0),0,board);
+      if (save) this.flushSave();
+    },
+    moveBoardBy(id, step){
+      const index = this.boards.findIndex(b => b.id === id);
+      const target = this.boards[index + step];
+      if (target) this.moveBoard(id, target.id, step > 0);
+    },
+    saveRename(){
+      if (!this.renameBox) return;
+      const b = this.boards.find(b => b.id === this.renameBox.id);
+      const title = this.renameBox.title.trim() || 'Untitled';
+      if (b){ b.title = title.slice(0,60); if (b.id === this.activeBoardId) this.title = b.title; }
+      this.renameBox = null; this.flushSave();
+    },
+    closeBoard(id, confirm = true){
+      const b = this.boards.find(b => b.id === id); if (!b) return;
+      const remove = () => {
+        document.activeElement?.blur(); this.flushSave();
+        const index = this.boards.findIndex(b => b.id === id);
+        this.boards.splice(index,1);
+        if (!this.boards.length) this.boards.push(this.makeBoard({}));
+        if (this.activeBoardId === id) this.activateBoard(this.boards[Math.min(index,this.boards.length-1)]);
+        this.flushSave();
+      };
+      if (confirm) this.askConfirm('Close this canvas? It will be removed from this browser. Export it as JSON first if you want to keep a copy.', remove);
+      else remove();
+    },
+    // pulizia dati salvati (es. rimuove eventuali accordion delle versioni precedenti)
+    sanitizeItems(arr){
+      if (!Array.isArray(arr)) return [];
+      const types = ['note','text','image','link','emoji','shape','arrow'];
+      const ids = new Set();
+      return arr.filter(i => i && typeof i === 'object' && types.includes(i.type)).map(i => {
+        const item = { ...i };
+        delete item.parent; delete item.seo;
+        if (typeof item.id !== 'string' || !/^[\w-]+$/.test(item.id) || ids.has(item.id)) item.id = uid();
+        ids.add(item.id);
+        if (item.type === 'arrow') {
+          for (const end of ['a','b']) {
+            const p = item[end];
+            item[end] = p && typeof p.item === 'string' ? { item:p.item }
+              : { x:Number.isFinite(p?.x) ? p.x : 0, y:Number.isFinite(p?.y) ? p.y : 0 };
+          }
+        } else {
+          for (const key of ['x','y']) if (!Number.isFinite(item[key])) item[key] = 0;
+          for (const key of ['w','h']) if (!Number.isFinite(item[key]) || item[key] <= 0) item[key] = 184;
+          if (item.type === 'link') { item.url = this.safeUrl(item.url); item.h = 118; }
+          if (['text','emoji'].includes(item.type) && (!Number.isFinite(item.size) || item.size <= 0)) item.size = 30;
+          if (['text','note'].includes(item.type)) item.text = String(item.text || '');
+        }
+        return item;
+      });
+    },
+    markSeen(){ try { localStorage.setItem('mb.seen.v1','1'); } catch(e) {} this.onboarding = false; },
+
+    /* ======================= GEOMETRIA ========================== */
+    stage(){ return this.$refs.stage; },
+    viewSize(){ const r = this.stage().getBoundingClientRect(); return { w: r.width, h: r.height }; },
+    screenPoint(e){ const r = this.stage().getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; },
+    toWorld(p){ return { x: (p.x - this.camera.x) / this.camera.z, y: (p.y - this.camera.y) / this.camera.z }; },
+    worldPoint(e){ return this.toWorld(this.screenPoint(e)); },
+    viewCenter(){ const v = this.viewSize(); return this.toWorld({ x: v.w/2, y: v.h/2 }); },
+
+    rectOf(it){ return { x: it.x, y: it.y, w: it.w || it.size || 0, h: it.h || it.size || 0 }; },
+    centerOf(it){ const r = this.rectOf(it); return { x: r.x + r.w/2, y: r.y + r.h/2 }; },
+    byId(id){ return this.items.find(i => i.id === id); },
+    sel(id){ return this.selection.includes(id); },
+
+    // punto sul bordo di un elemento, in direzione di "towards" (per frecce agganciate)
+    edgePoint(it, towards){
+      const c = this.centerOf(it), r = this.rectOf(it);
+      const hw = r.w/2 + 4, hh = r.h/2 + 4;
+      const dx = towards.x - c.x, dy = towards.y - c.y;
+      if (Math.abs(dx) < .001 && Math.abs(dy) < .001) return c;
+      const sx = Math.abs(dx) < 1e-9 ? Infinity : hw / Math.abs(dx);
+      const sy = Math.abs(dy) < 1e-9 ? Infinity : hh / Math.abs(dy);
+      const s = Math.min(sx, sy);
+      return { x: c.x + dx*s, y: c.y + dy*s };
+    },
+    arrowEnd(it, which){
+      const ep = it[which];
+      const other = it[which === 'a' ? 'b' : 'a'];
+      let target;
+      if (other.item){
+        const o = this.byId(other.item);
+        target = o ? this.centerOf(o) : { x: other.x || 0, y: other.y || 0 };
+      } else target = { x: other.x, y: other.y };
+      if (ep.item){
+        const t = this.byId(ep.item);
+        if (t) return this.edgePoint(t, target);
+      }
+      return { x: ep.x, y: ep.y };
+    },
+    arrowGeom(it){
+      const a = this.arrowEnd(it,'a'), b = this.arrowEnd(it,'b');
+      return { x1: a.x, y1: a.y, x2: b.x, y2: b.y };
+    },
+
+    /* ==================== STILI / CLASSI ======================== */
+    gridStyle(){
+      const c = this.camera;
+      const a = .16 * clamp(c.z, .4, 1);
+      return {
+        backgroundImage: `radial-gradient(circle at 1px 1px, rgba(83,94,68,${a}) 1px, transparent 0)`,
+        backgroundSize: `${26*c.z}px ${26*c.z}px`,
+        backgroundPosition: `${c.x}px ${c.y}px`,
+      };
+    },
+    worldStyle(){
+      const c = this.camera;
+      return { transform: `translate(${c.x}px, ${c.y}px) scale(${c.z})` };
+    },
+    boxStyle(it){
+      const s = { left: it.x + 'px', top: it.y + 'px' };
+      // il testo ha ingombro reale: larghezza/altezza definite dal contenuto
+      if (it.type !== 'text'){
+        const sz = (it.type === 'emoji') ? it.size : null;
+        s.width  = (it.type === 'emoji' ? sz : it.w) + 'px';
+        s.height = (it.type === 'emoji' ? sz : it.h) + 'px';
+      }
+      if (it.rot) s.transform = `rotate(${it.rot}deg)`;
+      return s;
+    },
+    ringCls(it){
+      return ({ note:'rounded-lg', text:'rounded-md', image:'rounded-xl', link:'rounded-xl', emoji:'rounded-full',
+                 shape: it.shape === 'ellipse' ? 'rounded-full' : 'rounded-lg' })[it.type] || 'rounded-lg';
+    },
+    itemCls(it){
+      const c = ['absolute'];
+      if (it.type === 'arrow'){ c.push('pointer-events-none'); }
+      else {
+        c.push(it.type === 'text' ? 'cursor-text' : 'cursor-move');
+        if (this.sel(it.id)) c.push('ring-2','ring-indigo-500/80', this.ringCls(it));
+      }
+      return c.join(' ');
+    },
+    cursorCls(){
+      if (this.drag && (this.drag.type === 'marquee' || this.drag.type === 'draw')) return 'cursor-crosshair';
+      if (this.tool === 'arrow' || this.tool === 'line') return 'cursor-crosshair';
+      if (this.drag && this.drag.type === 'pan') return 'cursor-grabbing';
+      if (this.spaceDown) return 'cursor-grab';
+      return 'cursor-default';
+    },
+
+    /* ===================== STORICO (undo) ======================= */
+    serialize(){ return JSON.stringify(this.items); },
+    pushHistory(){
+      this.history.push(this.serialize());
+      if (this.history.length > 60) this.history.shift();
+      this.future = [];
+    },
+    undo(){
+      if (!this.history.length) return;
+      this.future.push(this.serialize());
+      this.items = JSON.parse(this.history.pop());
+      this.afterHistory();
+    },
+    redo(){
+      if (!this.future.length) return;
+      this.history.push(this.serialize());
+      this.items = JSON.parse(this.future.pop());
+      this.afterHistory();
+    },
+    afterHistory(){
+      this.selection = this.selection.filter(id => this.byId(id));
+      this.editingId = null;
+      this.persist();
+    },
+
+    /* ====================== PERSISTENZA ========================= */
+    persist(){
+      this.saved = false;
+      this.syncBoard();
+      clearTimeout(this._saveT);
+      this._saveT = setTimeout(() => this.flushSave(), 300);
+    },
+    flushSave(){
+      clearTimeout(this._saveT); clearTimeout(this._camT);
+      this.syncBoard();
+      try {
+        localStorage.setItem('mb.workspace.v2', JSON.stringify({ v:2, activeBoardId:this.activeBoardId, boards:this.boards }));
+        // Solo dopo il primo salvataggio riuscito: libera lo spazio della vecchia board.
+        localStorage.removeItem('mb.board.v1');
+        this.saved = true; this.saveError = false;
+      } catch(e) {
+        this.saved = false;
+        if (!this.saveError) this.toast('Could not save: browser storage is full or unavailable. Export your canvases as JSON.', '⚠️');
+        this.saveError = true;
+      }
+    },
+    persistCamera(){
+      clearTimeout(this._camT);
+      this._camT = setTimeout(() => this.flushSave(), 400);
+    },
+
+    /* ===================== AGGIUNTA ELEMENTI ==================== */
+    nextPos(w, h){
+      const c = this.viewCenter();
+      const off = (this.items.length % 6) * 26;
+      return { x: c.x - w/2 + off, y: c.y - h/2 + off };
+    },
+    addItem(obj){
+      obj.id = uid();
+      this.pushHistory();
+      this.items.push(obj);
+      this.selection = [obj.id];
+      this.persist();
+      return obj;
+    },
+    addNote(){
+      const p = this.nextPos(184, 184);
+      this.addItem({ type:'note', x:p.x, y:p.y, w:184, h:184,
+        color: this.NOTES[Math.floor(Math.random()*this.NOTES.length)],
+        text:'', rot: +(Math.random()*3 - 1.5).toFixed(2) });
+      this.startEditLast();
+    },
+    addText(){
+      const p = this.nextPos(260, 50);
+      const it = this.addItem({ type:'text', x:p.x, y:p.y, w:260, h:50, size:30, color:'#254E3B', text:'Text' });
+      this.measureItem(it);
+      this.startEditLast();
+    },
+    startEditLast(){
+      const it = this.items[this.items.length - 1];
+      if (it && (it.type === 'note' || it.type === 'text')) this.edit(it);
+    },
+    addEmoji(ch){
+      const p = this.nextPos(80, 80);
+      this.addItem({ type:'emoji', x:p.x, y:p.y, size:80, emoji:ch });
+    },
+    addShape(shape){
+      const p = this.nextPos(240, 160);
+      this.addItem({ type:'shape', shape, x:p.x, y:p.y, w:240, h:160,
+        color: this.INK[Math.floor(Math.random()*this.INK.length)] });
+    },
+    async addImage(src, boardId = this.activeBoardId){
+      let w = 460, h = 460;
+      try {
+        const info = await imgInfo(src);
+        const k = Math.min(460/info.w, 460/info.h, 1);
+        w = Math.max(60, Math.round(info.w * k));
+        h = Math.max(60, Math.round(info.h * k));
+      } catch(e) {}
+      const board = this.boards.find(b => b.id === boardId);
+      if (!board) return;
+      if (boardId === this.activeBoardId) {
+        const p = this.nextPos(w, h);
+        this.addItem({ type:'image', src, x:p.x, y:p.y, w, h });
+      } else {
+        // Il caricamento può completarsi dopo un cambio di tab: resta nel canvas originale.
+        board.items.push({ id:uid(), type:'image', src, x:0, y:0, w, h });
+        this.flushSave();
+      }
+    },
+    addLinkCard(url){
+      const p = this.nextPos(300, 118);
+      const it = this.addItem({ type:'link', url, x:p.x, y:p.y, w:300, h:118 });
+    },
+
+    edit(it){
+      if (this.editingId === it.id) return;
+      this.selectOnly(it.id);
+      this.pushHistory();
+      this.editingId = it.id;
+      this.$nextTick(() => {
+        const ta = document.getElementById('ta-' + it.id);
+        if (ta){ ta.focus(); ta.select(); this.autoGrow(ta); }
+      });
+    },
+    onDblClick(it){ this.editItem(it); },
+    onStageDblClick(e){
+      if (e.target.closest && e.target.closest('textarea')) return;
+      // il setPointerCapture può far sì che il dblclick arrivi allo stage: individua
+      // l'elemento realmente sotto il puntatore
+      const el = document.elementFromPoint(e.clientX, e.clientY);
+      const wrap = el && el.closest ? el.closest('[data-id]') : null;
+      if (!wrap) return;
+      const it = this.byId(wrap.dataset.id);
+      if (it) this.onDblClick(it);
+    },
+    // editor universale: ogni tipo di elemento è sempre modificabile
+    editItem(it){
+      if (!it) return;
+      this.cancelLinkOpen(); // doppio click sul link: si modifica, non si apre
+      // debounce: evita doppie aperture quando dblclick nativo e rilevamento manuale coincidono
+      if (Date.now() - this._editAt < 600) return;
+      this._editAt = Date.now();
+      switch (it.type){
+        case 'note':
+        case 'text': this.edit(it); break;
+        case 'emoji': this.emojiEditId = it.id; this.emojiOpen = true; this.shapesOpen = false; break;
+        case 'image': this.imageReplaceId = it.id; this.$refs.fileImage.click(); break;
+        case 'link': this.editLinkBox = { id: it.id, url: it.url }; break;
+        case 'shape': this.pushHistory(); it.shape = (it.shape === 'ellipse') ? 'rect' : 'ellipse'; this.persist(); break;
+        case 'arrow': this.toggleDashed(); break;
+      }
+    },
+    onEmojiPick(em){
+      if (this.emojiEditId){
+        const it = this.byId(this.emojiEditId);
+        if (it){ this.pushHistory(); it.emoji = em; this.persist(); this.toast('Emoji replaced', '✓'); }
+        this.emojiEditId = null;
+      } else this.addEmoji(em);
+      this.emojiOpen = false;
+    },
+    saveLinkEdit(){
+      if (!this.editLinkBox) return;
+      const url = (this.editLinkBox.url || '').trim();
+      if (!/^https?:\/\//i.test(url)){ this.toast('Enter a valid link (http/https)', '⚠️'); return; }
+      const it = this.byId(this.editLinkBox.id);
+      if (it){
+        this.pushHistory();
+        const changed = it.url !== url;
+        it.url = url;
+        if (changed){ it.h = 118; }
+        this.persist();
+        this.toast('Link updated', '🔗');
+      }
+      this.editLinkBox = null;
+    },
+    toggleShapes(){
+      const sel = this.selectedItems().filter(i => i.type === 'shape');
+      if (!sel.length) return;
+      this.pushHistory();
+      sel.forEach(i => { i.shape = (i.shape === 'ellipse') ? 'rect' : 'ellipse'; });
+      this.persist();
+    },
+
+    /* --------------- testo: ingombro reale (auto-fit) --------------- */
+    autoGrow(el){ if (!el) return; el.style.height = 'auto'; el.style.height = (el.scrollHeight + 2) + 'px'; },
+    // larghezza naturale del testo misurata con lo stesso font del canvas
+    textWidth(text, size){
+      if (!this._cv) this._cv = document.createElement('canvas');
+      const ctx = this._cv.getContext('2d');
+      ctx.font = `600 ${size}px "Nunito Sans", ui-sans-serif, sans-serif`;
+      let w = 0;
+      for (const line of String(text || '').split('\n')) w = Math.max(w, ctx.measureText(line || ' ').width);
+      return w;
+    },
+    measureItem(it){
+      if (!it || it.type !== 'text') return;
+      // se l'utente non ha fissato la larghezza con la maniglia, il box prende
+      // l'ingombro reale del contenuto (oltre 560px va a capo); l'altezza segue il wrap
+      if (!it.lockw) it.w = clamp(this.textWidth(it.text, it.size) + 13, 40, 560);
+      this.$nextTick(() => {
+        const el = document.querySelector(`[data-id="${it.id}"]`);
+        if (el && el.offsetHeight > 0) it.h = el.offsetHeight;
+      });
+    },
+    measureAllTexts(){ this.items.filter(i => i.type === 'text').forEach(i => this.measureItem(i)); },
+
+    /* -------------------------- gruppi -------------------------- */
+    canGroup(){
+      if (this.selection.length < 2) return false;
+      const sel = this.selectedItems();
+      const g = sel[0].gid;
+      return !(g && sel.every(i => i.gid === g));
+    },
+    hasGroup(){ return this.selectedItems().some(i => i.gid); },
+    createGroup(){
+      if (!this.canGroup()) return;
+      this.pushHistory();
+      const gid = uid();
+      this.selectedItems().forEach(i => { i.gid = gid; });
+      this.persist();
+      this.toast('Grouped: move and resize together', '⛓');
+    },
+    ungroupSelection(){
+      if (!this.hasGroup()) return;
+      this.pushHistory();
+      this.selectedItems().forEach(i => { i.gid = null; });
+      this.persist();
+      this.toast('Items ungrouped');
+    },
+    selBBox(){
+      let x1 = Infinity, y1 = Infinity, x2 = -Infinity, y2 = -Infinity;
+      for (const it of this.selectedItems()){
+        let a, b;
+        if (it.type === 'arrow'){
+          const g = this.arrowGeom(it); a = { x: g.x1, y: g.y1 }; b = { x: g.x2, y: g.y2 };
+        } else {
+          const r = this.rectOf(it); a = { x: r.x, y: r.y }; b = { x: r.x + r.w, y: r.y + r.h };
+        }
+        x1 = Math.min(x1, a.x); y1 = Math.min(y1, a.y);
+        x2 = Math.max(x2, b.x); y2 = Math.max(y2, b.y);
+      }
+      return { x1, y1, x2, y2 };
+    },
+    selBoxStyle(){
+      const b = this.selBBox(), pad = 10;
+      return { left: (b.x1 - pad) + 'px', top: (b.y1 - pad) + 'px',
+               width: (b.x2 - b.x1 + pad*2) + 'px', height: (b.y2 - b.y1 + pad*2) + 'px' };
+    },
+    // la barra degli strumenti dell'elemento sta vicina all'elemento selezionato
+    selToolbarStyle(){
+      const b = this.selBBox(), c = this.camera, v = this.viewSize();
+      const cx = (b.x1 + b.x2) / 2 * c.z + c.x;
+      let top = b.y1 * c.z + c.y - 54;
+      if (top < 64) top = b.y2 * c.z + c.y + 14;
+      return { left: clamp(cx, 140, Math.max(160, v.w - 140)) + 'px', top: (top + this.stage().offsetTop) + 'px', transform: 'translateX(-50%)' };
+    },
+
+    onEditBlur(ev, it){
+      if (it.type === 'text') this.measureItem(it);
+      this.editingId = null;
+      this.persist();
+    },
+
+    /* ====================== SELEZIONE =========================== */
+    selectOnly(id){ this.selection = [id]; },
+    toggleSel(id){
+      const i = this.selection.indexOf(id);
+      i >= 0 ? this.selection.splice(i,1) : this.selection.push(id);
+    },
+    deselect(){ this.selection = []; },
+    selectedItems(){ return this.items.filter(i => this.selection.includes(i.id)); },
+    selHas(t){ return this.selectedItems().some(i => i.type === t); },
+    anyInk(){ return this.selectedItems().some(i => ['shape','arrow','text'].includes(i.type)); },
+    anySizable(){ return this.selectedItems().some(i => ['text','emoji'].includes(i.type)); },
+
+    applyNoteColor(c){ if (!this.selection.length) return; this.pushHistory();
+      this.selectedItems().forEach(i => { if (i.type === 'note') i.color = c; }); this.persist(); },
+    applyInk(c){ if (!this.selection.length) return; this.pushHistory();
+      this.selectedItems().forEach(i => { if (['shape','arrow','text'].includes(i.type)) i.color = c; }); this.persist(); },
+    applySize(d){ if (!this.selection.length) return; this.pushHistory();
+      this.selectedItems().forEach(i => {
+        if (i.type === 'text')  i.size = clamp(i.size + d, 14, 120);
+        if (i.type === 'emoji') i.size = clamp(i.size + d, 24, 400);
+      }); this.persist(); },
+    toggleDashed(){ if (!this.selection.length) return; this.pushHistory();
+      this.selectedItems().forEach(i => { if (i.type === 'arrow') i.dashed = !i.dashed; }); this.persist(); },
+
+    duplicateSel(){
+      if (!this.selection.length) return;
+      this.pushHistory();
+      const clones = [];
+      for (const it of this.selectedItems()){
+        const c = JSON.parse(JSON.stringify(it));
+        c.id = uid();
+        if (c.a && !c.a.item){ c.a.x += 26; c.a.y += 26; }
+        if (c.b && !c.b.item){ c.b.x += 26; c.b.y += 26; }
+        if (c.x != null){ c.x += 26; c.y += 26; }
+        clones.push(c);
+      }
+      // le copie formano un gruppo nuovo, separato dall'originale
+      const gidMap = new Map();
+      for (const c of clones){
+        if (c.gid){
+          if (!gidMap.has(c.gid)) gidMap.set(c.gid, uid());
+          c.gid = gidMap.get(c.gid);
+        }
+      }
+      this.items.push(...clones);
+      this.selection = clones.map(c => c.id);
+      this.persist();
+    },
+    deleteSel(){
+      if (!this.selection.length) return;
+      this.pushHistory();
+      this.deleteItems(this.selection.slice());
+      this.selection = [];
+      this.persist();
+    },
+    deleteItems(ids){
+      // le frecce agganciate a elementi eliminati tornano punti liberi
+      for (const it of this.items){
+        if (it.type === 'arrow'){
+          for (const w of ['a','b']){
+            if (it[w].item && ids.includes(it[w].item)){
+              const p = this.arrowEnd(it, w);
+              it[w] = { x: p.x, y: p.y };
+            }
+          }
+        }
+      }
+      this.items = this.items.filter(i => !ids.includes(i.id));
+    },
+    zOrder(front){
+      if (!this.selection.length) return;
+      this.pushHistory();
+      const sel = this.selectedItems();
+      this.items = this.items.filter(i => !this.selection.includes(i.id));
+      front ? this.items.push(...sel) : this.items.unshift(...sel);
+      this.persist();
+    },
+
+    snapshotSel(){
+      return this.selectedItems().map(s => ({ id:s.id, x:s.x, y:s.y,
+        ax: s.a ? s.a.x : 0, ay: s.a ? s.a.y : 0, bx: s.b ? s.b.x : 0, by: s.b ? s.b.y : 0 }));
+    },
+    applyMove(d, dx, dy){
+      for (const o of d.origins){
+        const it = this.byId(o.id);
+        if (!it) continue;
+        if (it.type === 'arrow'){
+          if (!it.a.item){ it.a.x = o.ax + dx; it.a.y = o.ay + dy; }
+          if (!it.b.item){ it.b.x = o.bx + dx; it.b.y = o.by + dy; }
+        } else { it.x = o.x + dx; it.y = o.y + dy; }
+      }
+    },
+    moveBySel(dx, dy){ this.applyMove({ origins: this.snapshotSel() }, dx, dy); },
+
+    /* ==================== INTERAZIONI POINTER =================== */
+    onStageDown(e){
+      if (e.button === 1) e.preventDefault();
+      this.imageReplaceId = null; // annulla una sostituzione immagine in sospeso
+      this.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (this.pointers.size === 2){ this.startPinch(); return; }
+
+
+      if ((this.tool === 'arrow' || this.tool === 'line') && e.button === 0){
+        const p = this.worldPoint(e);
+        this.drag = { type:'draw', tool:this.tool, ax:p.x, ay:p.y, bx:p.x, by:p.y };
+        this.stage().setPointerCapture(e.pointerId);
+        return;
+      }
+      // maiuscolo + trascina sullo sfondo = selezione a rettangolo (marquee)
+      if (e.shiftKey && e.button === 0 && this.tool === 'select' && !this.spaceDown){
+        const p = this.worldPoint(e);
+        this.drag = { type:'marquee', ax:p.x, ay:p.y, bx:p.x, by:p.y, base:[...this.selection] };
+        this.stage().setPointerCapture(e.pointerId);
+        return;
+      }
+      if (e.button === 0 || e.button === 1) this.startPan(e);
+    },
+    startPan(e){
+      const sp = this.screenPoint(e);
+      this.drag = { type:'pan', sx:sp.x, sy:sp.y, cx:this.camera.x, cy:this.camera.y, moved:0 };
+      this.stage().setPointerCapture(e.pointerId);
+    },
+    startPinch(){
+      this.drag = null;
+      const pts = [...this.pointers.values()];
+      const mid = this.stageLocal({ x:(pts[0].x+pts[1].x)/2, y:(pts[0].y+pts[1].y)/2 });
+      this.pinch = { d0: Math.hypot(pts[0].x-pts[1].x, pts[0].y-pts[1].y) || 1,
+                     z0: this.camera.z, world: this.toWorld(mid) };
+    },
+    stageLocal(p){ const r = this.stage().getBoundingClientRect(); return { x: p.x - r.left, y: p.y - r.top }; },
+    updatePinch(){
+      const pts = [...this.pointers.values()];
+      if (pts.length > 1){
+        const d  = Math.hypot(pts[0].x-pts[1].x, pts[0].y-pts[1].y) || 1;
+        const mid = this.stageLocal({ x:(pts[0].x+pts[1].x)/2, y:(pts[0].y+pts[1].y)/2 });
+        const z = clamp(this.pinch.z0 * d / this.pinch.d0, .08, 4);
+        this.camera.z = z;
+        this.camera.x = mid.x - this.pinch.world.x * z;
+        this.camera.y = mid.y - this.pinch.world.y * z;
+      }
+    },
+
+    onStageMove(e){
+      if (this.pointers.has(e.pointerId)) this.pointers.set(e.pointerId, { x:e.clientX, y:e.clientY });
+      if (this.pinch){ this.updatePinch(); return; }
+      const d = this.drag; if (!d) return;
+
+      if (d.type === 'pan'){
+        const sp = this.screenPoint(e);
+        // spostamento netto dal punto di partenza (non il jitter accumulato):
+        // sotto i 5px il gesto resta un "click" e al rilascio deseleziona
+        d.moved = Math.max(d.moved, Math.hypot(sp.x - d.sx, sp.y - d.sy));
+        this.camera.x = d.cx + (sp.x - d.sx);
+        this.camera.y = d.cy + (sp.y - d.sy);
+      }
+      else if (d.type === 'draw'){
+        const p = this.worldPoint(e); d.bx = p.x; d.by = p.y;
+      }
+      else if (d.type === 'marquee'){
+        const p = this.worldPoint(e);
+        d.bx = p.x; d.by = p.y;
+        this.updateMarquee(d);
+      }
+      else if (d.type === 'move'){
+        const p = this.worldPoint(e);
+        // "ha davvero trascinato?" si misura in pixel schermo: il jitter non conta
+        const sp = this.screenPoint(e);
+        if (!d.moved && Math.hypot(sp.x - d.ssx, sp.y - d.ssy) > 4) d.moved = true;
+        if (d.moved) this.applyMove(d, p.x - d.sx, p.y - d.sy);
+      }
+      else if (d.type === 'resize'){
+        const it = this.byId(d.id); if (!it) return;
+        const p = this.worldPoint(e);
+        const dx = p.x - d.sx, dy = p.y - d.sy;
+
+        if (d.group && d.group.length){
+          // ridimensiona l'intero gruppo: scala uniforme attorno all'item afferrato
+          const s = clamp((d.sw + dx) / d.sw, .15, 20);
+          for (const m of d.group){
+            const mit = this.byId(m.id); if (!mit) continue;
+            mit.x = d.sx0 + (m.x - d.sx0) * s;
+            mit.y = d.sy0 + (m.y - d.sy0) * s;
+            if (mit.type === 'text'){ mit.size = clamp(m.size0 * s, 10, 200); }
+            else if (mit.type === 'emoji'){ mit.size = clamp(m.size * s, 16, 800); }
+            else if (mit.type === 'arrow'){
+              if (!mit.a.item){ mit.a.x = d.sx0 + (m.ax - d.sx0) * s; mit.a.y = d.sy0 + (m.ay - d.sy0) * s; }
+              if (!mit.b.item){ mit.b.x = d.sx0 + (m.bx - d.sx0) * s; mit.b.y = d.sy0 + (m.by - d.sy0) * s; }
+            }
+            else { mit.w = Math.max(24, m.w * s); mit.h = Math.max(24, m.h * s); }
+          }
+          this.measureAllTexts();
+        }
+        else if (it.type === 'emoji'){
+          it.size = clamp(d.ss + dx, 20, 800);
+        }
+        else if (it.type === 'text'){
+          // il testo si "ridimensiona" scalando la dimensione del font
+          const w = clamp(d.sw + dx, 60, 3000);
+          const s = w / d.sw;
+          it.size = clamp(d.size0 * s, 10, 200);
+          this.measureItem(it);
+        }
+        else {
+          const w = clamp(d.sw + dx, 40, 4000);
+          it.w = w;
+          it.h = (it.type === 'image' && d.aspect) ? clamp(w / d.aspect, 24, 4000) : clamp(d.sh + dy, 30, 4000);
+        }
+      }
+      else if (d.type === 'wresize'){
+        const it = this.byId(d.id); if (!it) return;
+        const p = this.worldPoint(e);
+        it.w = clamp(d.sw + (p.x - d.sx), 80, 2400);
+        this.measureItem(it);
+      }
+      else if (d.type === 'endpoint'){
+        const p = this.worldPoint(e);
+        const it = this.byId(d.id);
+        if (it) it[d.which] = { x: p.x, y: p.y };
+      }
+    },
+
+    onStageUp(e){
+      this.pointers.delete(e.pointerId);
+      if (this.pinch){
+        if (this.pointers.size > 1){ this.updatePinch(); return; }
+        this.pinch = null;
+        this.persistCamera();
+      }
+      const d = this.drag; if (!d) return;
+      this.drag = null;
+
+      if (d.type === 'pan'){ if (d.moved < 5) this.deselect(); this.persistCamera(); }
+      else if (d.type === 'draw'){
+        const len = Math.hypot(d.bx - d.ax, d.by - d.ay);
+        if (len >= 10){
+          this.pushHistory();
+          const it = { id: uid(), type:'arrow', head: d.tool === 'arrow' ? 'arrow' : 'none',
+                       color:'#254E3B', width:3, dashed:false,
+                       a:{ x:d.ax, y:d.ay }, b:{ x:d.bx, y:d.by } };
+          this.items.push(it);
+          this.tryAttach(it,'a'); this.tryAttach(it,'b');
+          this.selection = [it.id];
+          this.persist();
+        }
+        this.tool = 'select';
+      }
+      else if (d.type === 'move'){
+        if (d.moved){ this.persist(); this._lastClick = null; }
+        else if (d.link){ this.scheduleLinkOpen(d.link); this._lastClick = null; }
+        else {
+          // doppio click manuale: due click puliti sullo stesso elemento (fallback
+          // per i browser in cui il dblclick nativo è deviato dal pointer capture)
+          const now = Date.now();
+          const isDouble = this._lastClick && this._lastClick.id === d.itemId && (now - this._lastClick.t) < 500;
+          this._lastClick = { id: d.itemId, t: now };
+          if (isDouble) this.editItem(this.byId(d.itemId));
+        }
+      }
+      else if (d.type === 'endpoint'){
+        const it = this.byId(d.id);
+        if (it){
+          const ep = it[d.which];
+          const hit = this.hitItem({ x: ep.x, y: ep.y }, it.id);
+          if (hit) it[d.which] = { item: hit.id };
+        }
+        this.persist();
+      }
+      else if (d.type === 'resize' || d.type === 'wresize'){ this.persist(); }
+      else if (d.type === 'marquee'){ /* selezione già aggiornata in tempo reale */ }
+    },
+
+    // selezione a rettangolo: elementi che intersecano il rettangolo (+ i loro gruppi)
+    updateMarquee(d){
+      const x1 = Math.min(d.ax, d.bx), y1 = Math.min(d.ay, d.by);
+      const x2 = Math.max(d.ax, d.bx), y2 = Math.max(d.ay, d.by);
+      const hits = [];
+      for (const it of this.items){
+        let r;
+        if (it.type === 'arrow'){
+          const g = this.arrowGeom(it);
+          r = { x: Math.min(g.x1, g.x2), y: Math.min(g.y1, g.y2), w: Math.abs(g.x2 - g.x1), h: Math.abs(g.y2 - g.y1) };
+        } else {
+          r = this.rectOf(it);
+        }
+        if (x1 < r.x + r.w && r.x < x2 && y1 < r.y + r.h && r.y < y2) hits.push(it.id);
+      }
+      // un elemento in gruppo trascina con sé tutto il gruppo
+      const expanded = [...hits];
+      for (const id of hits){
+        const it = this.byId(id);
+        if (it && it.gid){
+          for (const other of this.items){
+            if (other.gid === it.gid && !expanded.includes(other.id)) expanded.push(other.id);
+          }
+        }
+      }
+      this.selection = [...new Set([...(d.base || []), ...expanded])];
+    },
+    marqueeStyle(){
+      const d = this.drag;
+      if (!d || d.type !== 'marquee') return {};
+      return { left: Math.min(d.ax, d.bx) + 'px', top: Math.min(d.ay, d.by) + 'px',
+               width: Math.abs(d.bx - d.ax) + 'px', height: Math.abs(d.by - d.ay) + 'px' };
+    },
+
+    onItemDown(e, it){
+      const wasSelected = this.sel(it.id); // un link si apre solo se era già selezionato
+      if (this.spaceDown || e.button === 1){ this.startPan(e); return; }
+      if (e.button !== 0) return;
+      if (e.target.closest('textarea')) return;
+      // con lo strumento freccia/linea attivo il drag disegna sempre, anche sopra gli elementi
+      if (this.tool === 'arrow' || this.tool === 'line'){
+        const p = this.worldPoint(e);
+        this.drag = { type:'draw', tool:this.tool, ax:p.x, ay:p.y, bx:p.x, by:p.y };
+        this.stage().setPointerCapture(e.pointerId);
+        return;
+      }
+      if (this.editingId && this.editingId !== it.id){
+        const ta = document.getElementById('ta-' + this.editingId); if (ta) ta.blur();
+      }
+      if (this.captionEditId && this.captionEditId !== it.id){
+        const cap = document.getElementById('cap-' + this.captionEditId); if (cap) cap.blur();
+      }
+      // elemento in gruppo? il click seleziona tutto il gruppo
+      if (it.gid && !e.shiftKey){
+        const members = this.items.filter(i => i.gid === it.gid).map(i => i.id);
+        const allIn = members.every(m => this.selection.includes(m));
+        if (!allIn) this.selection = [...new Set([...this.selection, ...members])];
+      }
+      else if (!this.sel(it.id)){ e.shiftKey ? this.selection.push(it.id) : this.selection = [it.id]; }
+      else if (e.shiftKey){ this.toggleSel(it.id); return; }
+      this.pushHistory();
+      const sp0 = this.screenPoint(e);
+      this.drag = { type:'move', sx:this.worldPoint(e).x, sy:this.worldPoint(e).y,
+                    ssx: sp0.x, ssy: sp0.y,
+                    origins: this.snapshotSel(), moved:false, itemId: it.id,
+                    link: (it.type === 'link' && wasSelected) ? it.url : null };
+      this.stage().setPointerCapture(e.pointerId);
+    },
+
+    onResizeDown(e, it){
+      e.stopPropagation();
+      if (e.button !== 0) return;
+      // il gruppo (se presente) si ridimensiona tutto insieme
+      this.selection = it.gid ? this.items.filter(i => i.gid === it.gid).map(i => i.id) : [it.id];
+      this.pushHistory();
+      const p = this.worldPoint(e);
+      const members = it.gid ? this.items.filter(i => i.gid === it.gid) : null;
+      this.drag = { type:'resize', id: it.id, sx: p.x, sy: p.y,
+                    sw: it.w || it.size, sh: it.h || it.size, ss: it.size || 0,
+                    size0: it.size || 0, sx0: it.x || 0, sy0: it.y || 0,
+                    aspect: (it.w && it.h) ? it.w / it.h : null,
+                    group: members ? members.map(m => ({
+                      id: m.id, x: m.x || 0, y: m.y || 0, w: m.w || 0, h: m.h || 0,
+                      size: m.size || 0, size0: m.size || 0,
+                      ax: m.a ? m.a.x : 0, ay: m.a ? m.a.y : 0, bx: m.b ? m.b.x : 0, by: m.b ? m.b.y : 0,
+                    })) : null };
+      this.stage().setPointerCapture(e.pointerId);
+    },
+
+    // maniglia laterale del testo: fissa la larghezza di wrap (attiva anche mentre si scrive)
+    onSideResizeDown(e, it){
+      e.stopPropagation();
+      e.preventDefault(); // evita che il focus abbandoni il textarea durante l'editing
+      if (e.button !== 0 || it.type !== 'text') return;
+      this.selectOnly(it.id);
+      this.pushHistory();
+      it.lockw = true; // d'ora in poi la larghezza resta quella scelta dall'utente
+      const p = this.worldPoint(e);
+      this.drag = { type:'wresize', id: it.id, sw: it.w, sx: p.x };
+      this.stage().setPointerCapture(e.pointerId);
+    },
+    // doppio click sulla maniglia: torna a misura del contenuto
+    unlockTextWidth(it){
+      if (!it || it.type !== 'text') return;
+      this.pushHistory();
+      it.lockw = false;
+      this.measureItem(it);
+      this.persist();
+      this.toast('Width fitted to text', '↔');
+    },
+
+    onEndpointDown(e, it, which){
+      e.stopPropagation();
+      if (e.button !== 0) return;
+      this.selectOnly(it.id);
+      this.pushHistory();
+      this.drag = { type:'endpoint', id: it.id, which };
+      this.stage().setPointerCapture(e.pointerId);
+    },
+
+    hitItem(p, exclude){
+      for (let i = this.items.length - 1; i >= 0; i--){
+        const it = this.items[i];
+        if (it.id === exclude || it.type === 'arrow') continue;
+        const r = this.rectOf(it);
+        if (p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h) return it;
+      }
+      return null;
+    },
+    tryAttach(it, which){
+      const ep = it[which];
+      const hit = this.hitItem({ x: ep.x, y: ep.y }, it.id);
+      if (hit) it[which] = { item: hit.id };
+    },
+
+    /* ======================= ZOOM / VISTA ======================= */
+    onWheel(e){
+      if (e.ctrlKey || e.metaKey || e.altKey){
+        e.preventDefault();
+        this.zoomAt(this.screenPoint(e), Math.exp(-e.deltaY * 0.0022));
+      } else {
+        e.preventDefault();
+        const k = e.deltaMode === 1 ? 16 : 1;
+        this.camera.x -= e.deltaX * k;
+        this.camera.y -= e.deltaY * k;
+        this.persistCamera();
+      }
+    },
+    zoomAt(p, f){
+      const z2 = clamp(this.camera.z * f, .08, 4);
+      const c = this.camera;
+      c.x = p.x - (p.x - c.x) * (z2 / c.z);
+      c.y = p.y - (p.y - c.y) * (z2 / c.z);
+      c.z = z2;
+      this.persistCamera();
+    },
+    zoomBy(f){ const v = this.viewSize(); this.zoomAt({ x: v.w/2, y: v.h/2 }, f); },
+    resetZoom(){ const v = this.viewSize(); this.zoomAt({ x: v.w/2, y: v.h/2 }, 1 / this.camera.z); },
+    zoomPct(){ return Math.round(this.camera.z * 100) + '%'; },
+    fitView(){
+      const v = this.viewSize();
+      if (!this.items.length){ this.camera = { x: v.w/2, y: v.h/2, z: 1 }; return; }
+      let x1 = Infinity, y1 = Infinity, x2 = -Infinity, y2 = -Infinity;
+      for (const it of this.items){
+        let a, b;
+        if (it.type === 'arrow'){
+          const g = this.arrowGeom(it); a = { x: g.x1, y: g.y1 }; b = { x: g.x2, y: g.y2 };
+        } else {
+          const r = this.rectOf(it); a = { x: r.x, y: r.y }; b = { x: r.x + r.w, y: r.y + r.h };
+        }
+        x1 = Math.min(x1, a.x); y1 = Math.min(y1, a.y);
+        x2 = Math.max(x2, b.x); y2 = Math.max(y2, b.y);
+      }
+      const pad = 80;
+      const w = x2 - x1 + pad*2, h = y2 - y1 + pad*2;
+      const z = clamp(Math.min(v.w / w, v.h / h), .08, 1.25);
+      this.camera = { z, x: v.w/2 - (x1+x2)/2 * z, y: v.h/2 - (y1+y2)/2 * z };
+      this.persistCamera();
+    },
+
+    /* ======================= TASTIERA =========================== */
+    onKey(e){
+      const t = document.activeElement;
+      const editing = t && (t.tagName === 'TEXTAREA' || t.tagName === 'INPUT' || t.isContentEditable);
+      if (e.key === 'Escape'){
+        if (this.editingId){ const ta = document.getElementById('ta-' + this.editingId); if (ta) ta.blur(); }
+        else if (this.tool !== 'select') this.tool = 'select';
+        else this.deselect();
+        this.closePops();
+        return;
+      }
+      if (e.key === '?' && !editing){ this.helpOpen = true; return; }
+      if (editing) return;
+      if (e.code === 'Space'){ this.spaceDown = true; e.preventDefault(); return; }
+
+      const meta = e.metaKey || e.ctrlKey;
+      const k = (e.key || '').toLowerCase();
+      if (meta && k === 'z'){ e.preventDefault(); e.shiftKey ? this.redo() : this.undo(); return; }
+      if (meta && k === 'd'){ e.preventDefault(); this.duplicateSel(); return; }
+      if (meta && k === 'a'){ e.preventDefault(); this.selection = this.items.map(i => i.id); return; }
+      if (meta && k === 'g'){ e.preventDefault(); e.shiftKey ? this.ungroupSelection() : this.createGroup(); return; }
+      if (e.key === 'Enter' && this.selection.length === 1){
+        e.preventDefault(); this.editItem(this.byId(this.selection[0])); return;
+      }
+      if ((e.key === 'Delete' || e.key === 'Backspace') && this.selection.length){ e.preventDefault(); this.deleteSel(); return; }
+      if (e.key === '0' && !meta){ this.resetZoom(); return; }
+
+      if (e.key.startsWith('Arrow') && this.selection.length){
+        e.preventDefault();
+        const step = e.shiftKey ? 10 : 1;
+        const dx = e.key === 'ArrowLeft' ? -step : e.key === 'ArrowRight' ? step : 0;
+        const dy = e.key === 'ArrowUp'   ? -step : e.key === 'ArrowDown'  ? step : 0;
+        this.pushHistory();
+        this.moveBySel(dx, dy);
+        this.persist();
+      }
+    },
+
+    /* ================== INCOLLA / DRAG & DROP =================== */
+    async onPaste(e){
+      const boardId = this.activeBoardId;
+      const t = e.target;
+      if (t && t.closest && t.closest('textarea, input, [contenteditable]')) return;
+      const dt = e.clipboardData; if (!dt) return;
+
+      for (const it of (dt.items || [])){
+        if (it.type && it.type.startsWith('image/')){
+          const f = it.getAsFile();
+          if (f){
+            e.preventDefault();
+            const src = await this.processImage(f);
+            await this.addImage(src, boardId);
+            this.toast('Image pasted', '🖼️');
+            return;
+          }
+        }
+      }
+      const text = (dt.getData('text/plain') || '').trim();
+      if (!text) return;
+      e.preventDefault();
+      this.addPastedText(text);
+    },
+    addPastedText(text){
+      if (/^https?:\/\/\S+$/i.test(text)){
+        if (MB_IMG_RE.test(text)){ this.addImage(text); this.toast('Image added', '🖼️'); }
+        else { this.addLinkCard(text); this.toast('Link added', '🔗'); }
+        return;
+      }
+      // testi molto lunghi: wrap largo e corpo più piccolo (la larghezza si regola con la maniglia)
+      const long = text.length > 300;
+      const w = text.length > 40 ? 560 : 280;
+      const size = long ? 16 : 24;
+      const lines = text.split('\n').length;
+      const h = clamp(lines * (size + 8) + 26, 60, 800);
+      const p = this.nextPos(w, h);
+      this.addItem({ type:'text', x:p.x, y:p.y, w, h, size, color:'#254E3B', text });
+      this.startEditLast();
+    },
+    async processImage(file){
+      const readURL = () => new Promise((res, rej) => {
+        const r = new FileReader();
+        r.onload = () => res(r.result); r.onerror = rej;
+        r.readAsDataURL(file);
+      });
+      const url = await readURL();
+      if (file.type === 'image/gif' || file.type === 'image/svg+xml') return url;
+      try {
+        const info = await imgInfo(url);
+        const MAX = 1400;
+        if (info.w <= MAX && info.h <= MAX && url.length < 350000) return url;
+        const k = Math.min(MAX / info.w, MAX / info.h, 1);
+        const cv = document.createElement('canvas');
+        cv.width  = Math.round(info.w * k);
+        cv.height = Math.round(info.h * k);
+        cv.getContext('2d').drawImage(info.el, 0, 0, cv.width, cv.height);
+        return cv.toDataURL('image/jpeg', .86);
+      } catch(err){ return url; }
+    },
+    async onDrop(e){
+      if (this.draggingBoardId) { this.endBoardDrag(); return; }
+      const boardId = this.activeBoardId;
+      const dt = e.dataTransfer; if (!dt) return;
+      const jsonFiles = [...(dt.files || [])].filter(f => /\.json$/i.test(f.name || '') || f.type === 'application/json');
+      if (jsonFiles.length){
+        for (const file of jsonFiles) await this.importJSONFile(file);
+        return;
+      }
+      const files = [...(dt.files || [])].filter(f => f.type && f.type.startsWith('image/'));
+      if (files.length){
+        for (const f of files){ await this.addImage(await this.processImage(f), boardId); }
+        this.toast(files.length > 1 ? files.length + ' images added' : 'Image added', '🖼️');
+        return;
+      }
+      const uri = ((dt.getData('text/uri-list') || '').split('\n')[0] || dt.getData('text/plain') || '').trim();
+      if (uri) this.addPastedText(uri);
+    },
+    async onImageFiles(e){
+      const boardId = this.activeBoardId;
+      const files = [...(e.target.files || [])].filter(f => f.type && f.type.startsWith('image/'));
+      // sostituzione di un'immagine esistente
+      if (this.imageReplaceId && files.length){
+        const it = this.byId(this.imageReplaceId);
+        this.imageReplaceId = null;
+        if (it){
+          const src = await this.processImage(files[0]);
+          let nw = it.w, nh = it.h;
+          try {
+            const info = await imgInfo(src);
+            const k = Math.max(it.w, it.h) / Math.max(info.w, info.h, 1);
+            nw = Math.max(40, Math.round(info.w * k));
+            nh = Math.max(40, Math.round(info.h * k));
+          } catch(err) {}
+          if (boardId !== this.activeBoardId || !this.byId(it.id)) {
+            e.target.value = '';
+            this.toast('Image replacement canceled after switching canvases', '⚠️');
+            return;
+          }
+          this.pushHistory();
+          it.src = src; it.w = nw; it.h = nh;
+          this.persist();
+          this.toast('Image replaced', '🖼️');
+          e.target.value = '';
+          return;
+        }
+      }
+      this.imageReplaceId = null;
+      for (const f of files){ await this.addImage(await this.processImage(f), boardId); }
+      if (files.length) this.toast(files.length > 1 ? files.length + ' images added' : 'Image added', '🖼️');
+      e.target.value = '';
+    },
+
+    /* ------------- immagini: didascalia + copia appunti ------------- */
+    startCaptionEdit(it){
+      if (!it) it = this.selectedItems().filter(i => i.type === 'image').pop();
+      if (!it) return;
+      this.selectOnly(it.id);
+      this.pushHistory();
+      if (it.caption == null) it.caption = '';
+      this.captionEditId = it.id;
+      this.$nextTick(() => {
+        const ta = document.getElementById('cap-' + it.id);
+        if (ta){ ta.focus(); this.autoGrow(ta); }
+      });
+    },
+    onCaptionBlur(it){
+      if (it) it.caption = (it.caption || '').trimEnd(); // stringa vuota = nessuna didascalia
+      this.captionEditId = null;
+      this.persist();
+    },
+    async copySelImage(){
+      const it = this.selectedItems().filter(i => i.type === 'image').pop();
+      if (!it) return;
+      if (!(navigator.clipboard && window.ClipboardItem)){
+        this.toast('This browser does not support copying images', '⚠️');
+        return;
+      }
+      let cached = null;
+      const getBlob = () => {
+        if (!cached) cached = this.imageClipboardBlob(it.src).then(b => b, () => null);
+        return cached;
+      };
+      try {
+        // la Promise dentro ClipboardItem mantiene valido il gesto utente
+        // mentre la conversione è in corso (necessario su Safari)
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': getBlob() })]);
+      } catch(e){
+        try { await navigator.clipboard.write([new ClipboardItem({ 'image/png': await getBlob() })]); }
+        catch(e2){ this.toast('Could not copy image', '⚠️'); return; }
+      }
+      (await getBlob()) ? this.toast('Image copied to clipboard', '📋')
+                        : this.toast('Could not copy image', '⚠️');
+    },
+    // converte il sorgente di un'immagine (data URL o URL remoto) in un blob PNG
+    async imageClipboardBlob(src){
+      let blob = null;
+      try {
+        const r = await fetch(src, { mode:'cors' });
+        if (r.ok) blob = await r.blob();
+      } catch(e) {}
+      if (blob && blob.type === 'image/png') return blob;
+      // ridisegna su canvas: uniforma jpeg/webp/svg a PNG
+      let el, w, h;
+      if (blob){
+        const u = URL.createObjectURL(blob);
+        try { const info = await imgInfo(u); el = info.el; w = info.w; h = info.h; }
+        finally { URL.revokeObjectURL(u); }
+      } else {
+        const info = await imgInfo(src); el = info.el; w = info.w; h = info.h;
+      }
+      const cv = document.createElement('canvas');
+      cv.width = w; cv.height = h;
+      cv.getContext('2d').drawImage(el, 0, 0);
+      return await new Promise((res, rej) => cv.toBlob(b => b ? res(b) : rej(new Error('toBlob')), 'image/png'));
+    },
+
+    safeUrl(u){ return /^https?:\/\//i.test(u || '') ? u : '#'; },
+    hostOf(u){ try { return new URL(u).hostname.replace('www.',''); } catch(e){ return u; } },
+
+    /* ========================= VARIE ============================ */
+    askConfirm(msg, fn){ this.confirmBox = { msg, fn }; },
+    confirmYes(){ const f = this.confirmBox && this.confirmBox.fn; this.confirmBox = null; if (f) f(); },
+    clearBoard(){
+      this.askConfirm('Clear this canvas? You can undo with ⌘Z / Ctrl+Z.', () => {
+        this.pushHistory(); this.items = []; this.deselect(); this.persist();
+      });
+    },
+    exportJSON(id = this.activeBoardId){
+      this.syncBoard();
+      const b = this.boards.find(b => b.id === id); if (!b) return;
+      let url, a;
+      try {
+        const blob = new Blob([JSON.stringify({ app:'moodboard', v:1, title:b.title, items:b.items, camera:b.camera }, null, 2)], { type:'application/json' });
+        url = URL.createObjectURL(blob);
+        a = document.createElement('a');
+        a.href = url;
+        a.download = (b.title.replace(/[<>:"/\\|?*\u0000-\u001f]/g, '_').trim() || 'Untitled') + '.json';
+        a.style.display = 'none';
+        // Il link deve essere nel documento per un download affidabile anche su Safari/Firefox.
+        document.body.appendChild(a);
+        a.click();
+      } catch(err){
+        this.toast('Could not export. Try again or check your browser download permissions.', '⚠️');
+      } finally {
+        // Lascia al browser il tempo di acquisire il file prima di liberare il Blob.
+        if (url) setTimeout(() => { a?.remove(); URL.revokeObjectURL(url); }, 60000);
+      }
+    },
+    importJSON(e){
+      const f = e.target.files[0]; if (!f) return;
+      this.importJSONFile(f);
+      e.target.value = '';
+    },
+    importJSONFile(file){
+      return new Promise(resolve => {
+        const r = new FileReader();
+        r.onload = () => {
+          try {
+            const d = JSON.parse(r.result);
+            if (!d || !Array.isArray(d.items)) throw new Error('invalid_canvas');
+            this.newBoard(d);
+            if (!d.camera) this.$nextTick(() => this.fitView());
+            this.toast('Canvas imported in a new tab', '✓');
+          } catch(err){ this.toast('Invalid file', '⚠️'); }
+          resolve();
+        };
+        r.onerror = r.onabort = () => { this.toast('Could not read the JSON file', '⚠️'); resolve(); };
+        r.readAsText(file);
+      });
+    },
+    toast(msg, icon){
+      const id = uid();
+      this.toasts.push({ id, msg, icon: icon || '' });
+      setTimeout(() => { this.toasts = this.toasts.filter(t => t.id !== id); }, 2600);
+    },
+    // il link si apre solo al secondo click (quando è già selezionato); il breve
+    // ritardo lascia passare il doppio click, che apre la modifica invece del sito
+    scheduleLinkOpen(url){
+      this.cancelLinkOpen();
+      this._linkT = setTimeout(() => { this._linkT = null; window.open(this.safeUrl(url), '_blank', 'noopener,noreferrer'); }, 260);
+    },
+    cancelLinkOpen(){
+      if (this._linkT){ clearTimeout(this._linkT); this._linkT = null; }
+    },
+    closePops(){ this.emojiOpen = false; this.emojiEditId = null; this.shapesOpen = false; this.menuOpen = false; },
+  };
+}
+</script>
+
+<!-- Alpine.js da CDN -->
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js"></script>
+
+<style>
+  [x-cloak]{ display:none !important; }
+  html, body { height: 100%; }
+  ::-webkit-scrollbar{ width:8px; height:8px; }
+  ::-webkit-scrollbar-thumb{ background:#d6cab6; border-radius:8px; }
+  ::-webkit-scrollbar-track{ background:transparent; }
+  textarea{ outline:none; }
+  body { background:#f7f1e7; }
+  button, input { -webkit-tap-highlight-color:transparent; }
+  button:focus-visible, input:focus-visible, [role="tab"]:focus-visible {
+    outline:2px solid #5488cd; outline-offset:3px;
+  }
+  button:not(:disabled) { transition:background-color .18s, color .18s, box-shadow .18s, transform .18s; }
+  button:disabled { cursor:default; }
+  .brand-name { font-family:Fraunces, Georgia, serif; font-weight:700; letter-spacing:-.06em; }
+  h2 { font-family:Fraunces, Georgia, serif; letter-spacing:-.025em; }
+  .app-header { padding:0 4px; }
+  .header-actions { background:#fffcf6d9; border:1px solid #e7dece; border-radius:999px; padding:4px; box-shadow:0 3px 10px #4b3a1e05; }
+  .header-actions > button, .header-actions > div > button { border-radius:999px; }
+  .canvas-tab { border-radius:15px; min-height:40px; transition:background-color .18s, border-color .18s, box-shadow .18s; }
+  .canvas-tab:has([aria-selected="true"]) { background:#254e3b; border-color:#254e3b; color:#fffcf6; box-shadow:0 4px 10px #254e3b19; }
+  .canvas-tab:has([aria-selected="true"]) button:hover { background:#ffffff1c; color:#fff; }
+  .canvas-tab [role="tab"] { padding-left:16px; }
+  .tool-dock { border:1px solid #e2d8c5; border-radius:24px; padding:9px 12px; background:#fffcf6f5; }
+  .tool-dock > button { width:44px; height:44px; border-radius:15px; }
+  .tool-dock > button[title="Sticky note"] { background:#f8df9466; color:#896416; }
+  .tool-dock > button[title="Upload image"] { background:#c5d8f466; color:#426ba0; }
+  .tool-dock > button[title="Emoji"] { background:#ffd2b94d; }
+  .tool-dock > button:hover { transform:translateY(-3px); }
+  .empty-illustration { position:relative; width:118px; height:96px; margin:0 auto 28px; }
+  .empty-illustration::before, .empty-illustration::after { content:''; position:absolute; width:70px; height:82px; border:6px solid #fffcf6; border-bottom-width:17px; border-radius:5px; box-shadow:0 6px 15px #4b3a1e12; }
+  .empty-illustration::before { left:5px; top:1px; transform:rotate(-14deg); background:linear-gradient(145deg,#f8df94 38%,#93b59e 39%,#254e3b 85%); }
+  .empty-illustration::after { right:2px; top:12px; transform:rotate(12deg); background:linear-gradient(135deg,#ffd2b9 40%,#e78a69 41%,#f5ba87 80%); }
+  @media (max-width:639px) {
+    .app-header { gap:8px; }
+    .tool-dock { padding:7px; gap:0; border-radius:22px; flex-wrap:nowrap; }
+    .tool-dock > button { width:36px; height:40px; flex-shrink:0; }
+    .tool-dock > span { margin-left:2px; margin-right:2px; }
+  }
+  @media (prefers-reduced-motion:reduce) { *, *::before, *::after { transition:none !important; animation:none !important; } }
+</style>
+</head>
+
+<body class="h-full overflow-hidden bg-slate-100 font-sans text-slate-900 antialiased"
+      x-data="moodboardApp()" @dragover.prevent @drop.prevent="onDrop"
+      @pointermove.window="onTabPointerMove($event)"
+      @pointerup.window="if (tabDrag && tabDrag.pointerId === $event.pointerId) endBoardDrag()"
+      @pointercancel.window="if (tabDrag && tabDrag.pointerId === $event.pointerId) endBoardDrag(true)"
+      @keydown.escape.window="if (tabDrag) endBoardDrag(true)"
+      @blur.window="if (tabDrag) endBoardDrag(true)">
+
+<!-- ==================== CANVAS INFINITO ==================== -->
+<div x-ref="stage"
+     class="absolute inset-x-0 bottom-0 top-32 touch-none select-none bg-slate-50"
+     :class="cursorCls()"
+     @pointerdown="onStageDown($event)"
+     @pointermove="onStageMove($event)"
+     @pointerup="onStageUp($event)"
+     @pointercancel="onStageUp($event)"
+     @dblclick="onStageDblClick($event)"
+     @wheel.prevent="onWheel($event)">
+
+  <!-- griglia di pallini (segue camera e zoom) -->
+  <div class="absolute inset-0 pointer-events-none" :style="gridStyle()"></div>
+
+  <div x-cloak x-show="!items.length && !onboarding" class="absolute inset-0 grid place-items-center pointer-events-none px-8 pb-20">
+    <div class="text-center max-w-sm select-none">
+      <div class="empty-illustration" aria-hidden="true"></div>
+      <p class="font-display text-3xl sm:text-4xl text-slate-700 leading-tight tracking-tight">A home for your<br>next obsession.</p>
+      <p class="mt-3 text-sm text-slate-500 leading-relaxed">Save the spark. Follow the rabbit hole.<br>Paste something you love, or pick a tool below.</p>
+      <span class="inline-block mt-5 rounded-full border border-slate-200 bg-white/60 px-4 py-1.5 text-[11px] font-semibold text-slate-500">For the things you can't stop thinking about</span>
+    </div>
+  </div>
+
+  <!-- livello "mondo" -->
+  <div class="absolute left-0 top-0 origin-top-left will-change-transform" :style="worldStyle()">
+
+    <template x-for="it in items" :key="it.id">
+      <div :class="itemCls(it)"
+           :data-id="it.id"
+           :style="it.type === 'arrow' ? 'left:0;top:0;width:0;height:0' : boxStyle(it)"
+           @pointerdown.stop="onItemDown($event, it)">
+
+        <!-- FRECCE / LINEE -->
+        <template x-if="it.type === 'arrow'">
+          <svg class="absolute overflow-visible" style="left:0;top:0;width:1px;height:1px">
+            <defs>
+              <marker :id="'ah' + it.id" viewBox="0 0 10 10" refX="8.5" refY="5"
+                      markerWidth="4.5" markerHeight="4.5" orient="auto-start-reverse">
+                <path d="M0,0 L10,5 L0,10 z" :fill="it.color"></path>
+              </marker>
+            </defs>
+            <line :x1="arrowGeom(it).x1" :y1="arrowGeom(it).y1" :x2="arrowGeom(it).x2" :y2="arrowGeom(it).y2"
+                  stroke="#5488cd" stroke-opacity="0.35" :stroke-width="it.width + 10"
+                  x-show="sel(it.id)" stroke-linecap="round"></line>
+            <line :x1="arrowGeom(it).x1" :y1="arrowGeom(it).y1" :x2="arrowGeom(it).x2" :y2="arrowGeom(it).y2"
+                  :stroke="it.color" :stroke-width="it.width" stroke-linecap="round"
+                  :stroke-dasharray="it.dashed ? '9 7' : ''"
+                  :marker-end="it.head === 'arrow' ? 'url(#ah' + it.id + ')' : null"
+                  style="pointer-events:none"></line>
+            <!-- area cliccabile -->
+            <line :x1="arrowGeom(it).x1" :y1="arrowGeom(it).y1" :x2="arrowGeom(it).x2" :y2="arrowGeom(it).y2"
+                  stroke="rgba(0,0,0,0)" stroke-width="22" style="pointer-events:stroke;cursor:move"
+                  @pointerdown.stop="onItemDown($event, it)"></line>
+          </svg>
+        </template>
+        <!-- maniglie estremità freccia -->
+        <template x-if="it.type === 'arrow' && sel(it.id)">
+          <div>
+            <div class="absolute w-3.5 h-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white border-2 border-indigo-500 shadow cursor-move pointer-events-auto"
+                 :style="`left:${arrowEnd(it,'a').x}px;top:${arrowEnd(it,'a').y}px`"
+                 @pointerdown.stop="onEndpointDown($event, it, 'a')"></div>
+            <div class="absolute w-3.5 h-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white border-2 border-indigo-500 shadow cursor-move pointer-events-auto"
+                 :style="`left:${arrowEnd(it,'b').x}px;top:${arrowEnd(it,'b').y}px`"
+                 @pointerdown.stop="onEndpointDown($event, it, 'b')"></div>
+          </div>
+        </template>
+
+        <!-- POST-IT -->
+        <template x-if="it.type === 'note'">
+          <div class="relative w-full h-full rounded-lg shadow-soft" :style="`background:${it.color}`">
+            <template x-if="editingId === it.id">
+              <textarea x-model="it.text" :id="'ta-' + it.id" spellcheck="false"
+                        class="absolute inset-0 w-full h-full p-3.5 bg-transparent resize-none select-text text-[15px] leading-snug font-medium text-slate-800"
+                        @blur="onEditBlur($event, it)" @input="persist()"
+                        @pointerdown.stop
+                        @keydown.escape.prevent="$event.target.blur()"
+                        @keydown.meta.enter.prevent="$event.target.blur()"
+                        @keydown.ctrl.enter.prevent="$event.target.blur()"></textarea>
+            </template>
+            <template x-if="editingId !== it.id">
+              <div class="w-full h-full p-3.5 pointer-events-none overflow-hidden">
+                <span x-show="it.text" class="whitespace-pre-wrap break-words text-[15px] leading-snug font-medium text-slate-800" x-text="it.text"></span>
+                <span x-show="!it.text" class="text-[15px] text-slate-400/80">Double-click to write…</span>
+              </div>
+            </template>
+          </div>
+        </template>
+
+        <!-- CASella DI TESTO (ingombro reale: il box si adatta al contenuto) -->
+        <template x-if="it.type === 'text'">
+          <div class="relative">
+            <template x-if="editingId === it.id">
+              <textarea x-model="it.text" :id="'ta-' + it.id" spellcheck="false"
+                        class="block p-1.5 bg-white/40 backdrop-blur-[1px] rounded-md resize-none select-text font-semibold leading-tight"
+                        :style="`font-size:${it.size}px;color:${it.color};width:${it.w}px`"
+                        @blur="onEditBlur($event, it)"
+                        @input="autoGrow($event.target); persist()"
+                        @pointerdown.stop
+                        @keydown.escape.prevent="$event.target.blur()"
+                        @keydown.meta.enter.prevent="$event.target.blur()"
+                        @keydown.ctrl.enter.prevent="$event.target.blur()"></textarea>
+            </template>
+            <template x-if="editingId !== it.id">
+              <!-- niente spazi/acapi tra gli span: whitespace-pre-wrap li renderizzerebbe -->
+              <!-- la larghezza è il wrap del testo: si regola con la maniglia laterale -->
+              <div class="p-1.5 pointer-events-none whitespace-pre-wrap break-words font-semibold leading-tight"
+                   :style="`font-size:${it.size}px;color:${it.color};width:${it.w}px`"><span x-show="it.text" x-text="it.text"></span><span x-show="!it.text" class="opacity-40">Double-click…</span></div>
+            </template>
+          </div>
+        </template>
+
+        <!-- EMOJI -->
+        <template x-if="it.type === 'emoji'">
+          <div class="w-full h-full flex items-center justify-center pointer-events-none leading-none"
+               :style="`font-size:${it.size}px`" x-text="it.emoji"></div>
+        </template>
+
+        <!-- IMMAGINE (con didascalia opzionale in sovrimpressione) -->
+        <template x-if="it.type === 'image'">
+          <div class="relative w-full h-full rounded-xl overflow-hidden shadow-panel ring-1 ring-black/5 bg-white">
+            <img :src="it.src" draggable="false" class="w-full h-full pointer-events-none" style="object-fit:cover" :alt="it.caption || ''">
+            <template x-if="it.caption && captionEditId !== it.id">
+              <div class="absolute inset-x-0 bottom-0 px-2.5 pb-1.5 pt-7 bg-gradient-to-t from-black/70 via-black/30 to-transparent cursor-text"
+                   @pointerdown.stop="selectOnly(it.id)"
+                   @dblclick.stop.prevent="startCaptionEdit(it)">
+                <span class="block text-[12px] leading-snug font-medium text-white whitespace-pre-wrap break-words" x-text="it.caption"></span>
+              </div>
+            </template>
+            <template x-if="captionEditId === it.id">
+              <textarea x-model="it.caption" :id="'cap-' + it.id" spellcheck="false" maxlength="280" rows="1"
+                        class="absolute inset-x-0 bottom-0 w-full px-2.5 py-1.5 text-[12px] leading-snug font-medium text-white bg-slate-900/75 backdrop-blur-[2px] resize-none select-text outline-none placeholder:text-white/50"
+                        placeholder="Caption…"
+                        @blur="onCaptionBlur(it)"
+                        @input="autoGrow($event.target); persist()"
+                        @pointerdown.stop
+                        @keydown.escape.prevent="$event.target.blur()"
+                        @keydown.meta.enter.prevent="$event.target.blur()"
+                        @keydown.ctrl.enter.prevent="$event.target.blur()"></textarea>
+            </template>
+          </div>
+        </template>
+
+        <!-- LINK: card locale, nessuna richiesta di metadati -->
+        <template x-if="it.type === 'link'">
+          <a :href="safeUrl(it.url)" target="_blank" rel="noopener noreferrer" draggable="false"
+             class="w-full h-full flex flex-col bg-white rounded-xl shadow-soft ring-1 ring-black/5 overflow-hidden pointer-events-none">
+            <div class="flex-1 min-h-0 flex flex-col gap-1 p-3">
+              <div class="flex items-center gap-1.5 min-w-0">
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate"
+                      x-text="hostOf(it.url)"></span>
+              </div>
+              <div class="text-[13.5px] font-bold leading-snug text-slate-800 line-clamp-2"
+                    x-text="hostOf(it.url)"></div>
+              <div class="text-[12px] text-slate-500 leading-snug line-clamp-2"
+                    x-text="it.url"></div>
+              <div class="mt-auto pt-1 flex items-center gap-1.5 text-[11px] font-semibold text-indigo-600 min-w-0">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>
+                <span class="truncate" x-text="hostOf(it.url)"></span>
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 ml-auto"><path d="M7 17 17 7"/><path d="M9 7h8v8"/></svg>
+              </div>
+            </div>
+          </a>
+        </template>
+
+        <!-- FORME -->
+        <template x-if="it.type === 'shape'">
+          <div class="w-full h-full border-2 pointer-events-none"
+               :class="it.shape === 'ellipse' ? 'rounded-full' : 'rounded-lg'"
+               :style="`border-color:${it.color};background:${it.color}1F`"></div>
+        </template>
+
+        <!-- maniglia di ridimensionamento -->
+        <template x-if="it.type !== 'arrow' && sel(it.id) && !(editingId === it.id)">
+          <div class="absolute -right-1.5 -bottom-1.5 w-3.5 h-3.5 rounded-full bg-indigo-600 border-2 border-white shadow cursor-nwse-resize pointer-events-auto"
+               @pointerdown.stop="onResizeDown($event, it)"></div>
+        </template>
+
+        <!-- maniglia laterale del testo: larghezza di wrap, visibile anche in editing -->
+        <template x-if="it.type === 'text' && sel(it.id)">
+          <div class="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-3 h-9 rounded-full bg-indigo-600 border-2 border-white shadow cursor-ew-resize pointer-events-auto hover:scale-125 transition-transform"
+               :style="`left:${it.w}px`"
+               title="Drag to change width — double-click to fit text"
+               @pointerdown.stop="onSideResizeDown($event, it)"
+               @dblclick.stop="unlockTextWidth(it)"></div>
+        </template>
+      </div>
+    </template>
+
+    <!-- riquadro della selezione multipla / gruppo -->
+    <template x-if="selection.length > 1">
+      <div class="absolute pointer-events-none border-2 border-dashed border-indigo-400/70 rounded-xl"
+           :style="selBoxStyle()"></div>
+    </template>
+
+    <!-- rettangolo di selezione (⇧ + trascina) -->
+    <template x-if="drag && drag.type === 'marquee'">
+      <div class="absolute pointer-events-none border-2 border-indigo-500 bg-indigo-500/10 rounded-sm"
+           :style="marqueeStyle()"></div>
+    </template>
+
+    <!-- anteprima durante il disegno di freccia/linea -->
+    <template x-if="drag && drag.type === 'draw'">
+      <svg class="absolute overflow-visible pointer-events-none" style="left:0;top:0;width:1px;height:1px">
+        <line :x1="drag.ax" :y1="drag.ay" :x2="drag.bx" :y2="drag.by"
+              stroke="#254e3b" stroke-width="3" stroke-linecap="round" stroke-dasharray="9 7"></line>
+        <circle :cx="drag.ax" :cy="drag.ay" r="5" fill="#254e3b"></circle>
+      </svg>
+    </template>
+  </div>
+</div>
+
+<!-- ==================== BARRA SUPERIORE ==================== -->
+<div class="app-header absolute top-3 left-3 right-3 z-40 flex items-center justify-between gap-3 pointer-events-none">
+  <div class="flex items-center gap-2.5 pointer-events-auto">
+    <img src="assets/moodboardy.png" width="56" height="56" alt="" class="w-12 h-12 sm:w-14 sm:h-14 shrink-0 object-contain" draggable="false">
+    <div class="flex flex-col">
+        <span class="brand-name text-[23px] sm:text-[27px] text-slate-900 leading-none mb-1">moodboardy<span class="text-rose-500">.</span></span>
+        <input x-model="title" maxlength="60" spellcheck="false"
+                @input="persist()" @keydown.enter="$event.target.blur()"
+                 class="w-28 sm:w-52 px-2 py-0.5 -mx-2 text-[12px] font-semibold text-slate-500 bg-transparent rounded-lg border border-transparent hover:border-slate-200 focus:border-indigo-400 focus:bg-white focus:outline-none transition"
+               placeholder="Untitled" aria-label="Canvas title">
+      <span x-cloak x-show="saveError" class="px-2 text-[11px] text-rose-600">
+        Not saved — export as JSON
+      </span>
+    </div>
+  </div>
+
+  <!-- azioni a destra (solo in modifica) -->
+  <div class="header-actions flex items-center gap-0.5 pointer-events-auto">
+    <button class="w-9 h-9 grid place-items-center rounded-xl text-slate-500 hover:bg-white hover:text-slate-800 transition disabled:opacity-30 disabled:hover:bg-transparent"
+            :disabled="!history.length" @click="undo()" title="Undo (⌘Z / Ctrl+Z)">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
+    </button>
+    <button class="w-9 h-9 grid place-items-center rounded-xl text-slate-500 hover:bg-white hover:text-slate-800 transition disabled:opacity-30 disabled:hover:bg-transparent"
+            :disabled="!future.length" @click="redo()" title="Redo (⇧⌘Z / Ctrl+Shift+Z)">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg>
+    </button>
+
+    <button class="ml-1 w-9 h-9 grid place-items-center rounded-xl text-slate-500 hover:bg-white hover:text-slate-800 transition"
+            @click="helpOpen = true" title="Keyboard shortcuts (?)">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 2.5-3 4"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    </button>
+
+
+    <!-- menu extra -->
+    <div class="relative">
+      <button class="w-9 h-9 grid place-items-center rounded-xl text-slate-500 hover:bg-white hover:text-slate-800 transition"
+              @click="menuOpen = !menuOpen" title="More options">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>
+      </button>
+      <div x-cloak x-show="menuOpen" @click.outside="menuOpen = false" x-transition.opacity.duration.150ms
+           class="absolute right-0 top-11 w-56 rounded-2xl bg-white shadow-panel ring-1 ring-black/5 py-1.5 text-sm">
+        <button class="w-full flex items-center gap-2.5 px-4 py-2 text-slate-700 hover:bg-slate-50" @click="menuOpen=false; exportJSON()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export JSON
+        </button>
+        <button class="w-full flex items-center gap-2.5 px-4 py-2 text-slate-700 hover:bg-slate-50" @click="menuOpen=false; $refs.fileImport.click()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Import JSON
+        </button>
+        <button class="w-full flex items-center gap-2.5 px-4 py-2 text-rose-600 hover:bg-rose-50" @click="menuOpen=false; clearBoard()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          Clear canvas
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Canvas locali -->
+<div class="absolute top-20 inset-x-4 z-30 flex items-center gap-2">
+  <div class="flex-1 min-w-0 flex items-center gap-2 overflow-x-auto pb-2" x-ref="boardTabs" role="tablist" aria-label="Canvases">
+    <template x-for="b in boards" :key="b.id">
+      <div class="canvas-tab shrink-0 flex items-center rounded-xl border shadow-sm" :data-board-tab="b.id"
+           @pointerdown="onTabPointerDown($event, b.id)"
+           @auxclick.prevent.stop
+           :style="draggingBoardId === b.id ? 'opacity:.25;border:2px dashed #5488cd' : ''"
+           :class="activeBoardId === b.id ? 'bg-white border-indigo-400 text-indigo-700' : 'bg-slate-100 border-slate-200 text-slate-600'">
+        <button role="tab" :aria-selected="activeBoardId === b.id" @click="clickBoard(b.id)" @dblclick="renameBoard(b.id)"
+                draggable="false" @dragstart.prevent
+                @keydown.alt.arrow-left.prevent.stop="moveBoardBy(b.id, -1)" @keydown.alt.arrow-right.prevent.stop="moveBoardBy(b.id, 1)"
+                class="max-w-40 truncate px-3 py-2 text-xs font-semibold touch-none select-none cursor-grab active:cursor-grabbing" :title="b.title + ' — drag to reorder'" x-text="activeBoardId === b.id ? title : b.title"></button>
+        <button @click="renameBoard(b.id)" class="p-2 hover:bg-indigo-50 rounded-lg" title="Rename canvas" aria-label="Rename canvas">✎</button>
+        <button @click="closeBoard(b.id)" class="p-2 hover:bg-rose-50 hover:text-rose-600 rounded-lg" title="Close and remove canvas" aria-label="Close and remove canvas">×</button>
+      </div>
+    </template>
+    <button @click="newBoard(); $nextTick(() => $el.scrollIntoView({block:'nearest', inline:'nearest'}))" class="shrink-0 w-9 h-9 rounded-full bg-white border border-slate-200 text-slate-700 hover:bg-indigo-600 hover:text-white text-xl font-semibold" title="New canvas" aria-label="New canvas">+</button>
+  </div>
+</div>
+
+<div x-cloak x-show="draggingBoardId && tabDrag" :style="tabPreviewStyle()"
+     class="fixed z-50 pointer-events-none rounded-xl border-2 border-indigo-500 bg-white shadow-panel px-3 py-2 text-xs font-semibold text-indigo-700 truncate"
+     x-text="tabDrag ? tabDrag.title : ''"></div>
+
+<!-- ==================== BARRA STRUMENTI DELL'ELEMENTO (vicina all'elemento, animata) ==================== -->
+<div x-cloak x-show="selection.length > 0 && !drag"
+     class="absolute z-20 max-w-[calc(100vw-1rem)]"
+     :style="selToolbarStyle()">
+  <div x-show="selection.length > 0 && !drag"
+       x-transition:enter="transition ease-out duration-200 origin-bottom"
+       x-transition:enter-start="opacity-0 -translate-y-1 scale-90"
+       x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+       x-transition:leave="transition ease-in duration-100 origin-bottom"
+       x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+       x-transition:leave-end="opacity-0 -translate-y-1 scale-90"
+       class="flex flex-wrap items-center justify-center gap-1 rounded-2xl bg-white/95 backdrop-blur px-2.5 py-1.5 shadow-panel ring-1 ring-black/5">
+  <span x-show="selection.length > 1" class="text-[11px] font-bold text-white bg-indigo-600 rounded-full px-2 py-0.5 min-w-[22px] text-center"
+        x-text="selection.length"></span>
+
+  <template x-if="selHas('note')">
+    <div class="flex items-center gap-1.5 px-1">
+      <template x-for="c in NOTES" :key="c">
+        <button class="w-5 h-5 rounded-full ring-1 ring-black/10 hover:scale-125 transition-transform" :title="'Note color'"
+                :style="`background:${c}`" @click="applyNoteColor(c)"></button>
+      </template>
+    </div>
+  </template>
+
+  <template x-if="anyInk()">
+    <div class="flex items-center gap-1.5 px-1">
+      <template x-for="c in INK" :key="c">
+        <button class="w-5 h-5 rounded-full ring-1 ring-black/10 hover:scale-125 transition-transform" :title="'Color'"
+                :style="`background:${c}`" @click="applyInk(c)"></button>
+      </template>
+    </div>
+  </template>
+
+  <span class="w-px h-5 bg-slate-200 mx-0.5"></span>
+
+  <template x-if="anySizable()">
+    <div class="flex items-center">
+      <button class="w-8 h-8 grid place-items-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition" title="Decrease font size"
+              @click="applySize(-2)">
+        <span class="text-xs font-bold">A−</span>
+      </button>
+      <button class="w-8 h-8 grid place-items-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition" title="Increase font size"
+              @click="applySize(2)">
+        <span class="text-base font-bold">A+</span>
+      </button>
+    </div>
+  </template>
+
+  <template x-if="selHas('arrow')">
+    <button class="w-8 h-8 grid place-items-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition" title="Solid / dashed line"
+            @click="toggleDashed()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="18" x2="8" y2="18"/><line x1="12" y1="18" x2="16" y2="18"/><line x1="20" y1="18" x2="20.01" y2="18"/></svg>
+    </button>
+  </template>
+
+  <template x-if="selHas('shape')">
+    <button class="w-8 h-8 grid place-items-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition" title="Rectangle ⇄ ellipse"
+            @click="toggleShapes()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3" y="3" width="12" height="12" rx="2"/><circle cx="15.5" cy="15.5" r="5.5"/></svg>
+    </button>
+  </template>
+
+  <template x-if="selHas('image')">
+    <div class="flex items-center">
+      <button class="w-8 h-8 grid place-items-center rounded-lg text-slate-500 hover:bg-indigo-50 hover:text-indigo-600 transition" title="Image caption"
+              @click="startCaptionEdit()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 15h4"/><path d="M13 15h4"/><path d="M7 10.5h2.5"/><path d="M12.5 10.5H17"/></svg>
+      </button>
+      <button class="w-8 h-8 grid place-items-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition" title="Copy image to clipboard"
+              @click="copySelImage()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 2.5h6a1 1 0 0 1 1 1V5H8V3.5a1 1 0 0 1 1-1z"/><path d="m8.5 16 2.5-3 3.5 4"/><circle cx="14.5" cy="10.5" r="1"/></svg>
+      </button>
+    </div>
+  </template>
+
+  <template x-if="selection.length === 1">
+    <button class="w-8 h-8 grid place-items-center rounded-lg text-slate-500 hover:bg-indigo-50 hover:text-indigo-600 transition" title="Edit (Enter or double-click)"
+            @click="editItem(byId(selection[0]))">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+    </button>
+  </template>
+
+  <template x-if="selection.length > 1 && canGroup()">
+    <button class="w-8 h-8 grid place-items-center rounded-lg text-slate-500 hover:bg-indigo-50 hover:text-indigo-600 transition" title="Group (⌘G / Ctrl+G)"
+            @click="createGroup()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3" y="3" width="12" height="12" rx="2"/><rect x="9" y="9" width="12" height="12" rx="2"/></svg>
+    </button>
+  </template>
+
+  <template x-if="hasGroup()">
+    <button class="w-8 h-8 grid place-items-center rounded-lg text-slate-500 hover:bg-indigo-50 hover:text-indigo-600 transition" title="Ungroup (⇧⌘G / Ctrl+Shift+G)"
+            @click="ungroupSelection()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="2" y="4" width="9" height="9" rx="2"/><rect x="13" y="11" width="9" height="9" rx="2"/><line x1="8" y1="20" x2="16" y2="2" stroke-dasharray="2 2"/></svg>
+    </button>
+  </template>
+
+  <span class="w-px h-5 bg-slate-200 mx-0.5"></span>
+
+  <button class="w-8 h-8 grid place-items-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition" title="Duplicate (⌘D / Ctrl+D)"
+          @click="duplicateSel()">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+  </button>
+  <button class="w-8 h-8 grid place-items-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition" title="Bring to front"
+          @click="zOrder(true)">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 9 5-9 5-9-5 9-5z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/></svg>
+  </button>
+  <button class="w-8 h-8 grid place-items-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition" title="Send to back"
+          @click="zOrder(false)">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 8 9-5 9 5-9 5-9-5z"/><path d="m3 13 9 5 9-5"/><path d="m3 18 9 5 9-5"/></svg>
+  </button>
+  <button class="w-8 h-8 grid place-items-center rounded-lg text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition" title="Delete (⌫)"
+          @click="deleteSel()">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+  </button>
+  </div>
+</div>
+
+<!-- ==================== TOOLBAR ==================== -->
+<div class="absolute bottom-5 left-1/2 -translate-x-1/2 z-30" x-cloak>
+  <div class="relative">
+    <!-- popover emoji -->
+    <div x-cloak x-show="emojiOpen" @click.outside="emojiOpen = false; emojiEditId = null"
+         x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0"
+         class="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 w-[320px] rounded-2xl bg-white shadow-panel ring-1 ring-black/5 p-3">
+      <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wide mb-2 px-1">Emoji</div>
+      <div class="grid grid-cols-10 gap-0.5 max-h-56 overflow-y-auto">
+        <template x-for="em in EMOJIS" :key="em">
+          <button class="w-7 h-7 grid place-items-center rounded-lg text-xl hover:bg-slate-100 hover:scale-125 transition-all"
+                  x-text="em" @click="onEmojiPick(em)"></button>
+        </template>
+      </div>
+    </div>
+
+    <!-- popover forme -->
+    <div x-cloak x-show="shapesOpen" @click.outside="shapesOpen = false"
+         x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0"
+         class="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 rounded-2xl bg-white shadow-panel ring-1 ring-black/5 p-2 flex gap-2">
+      <button class="w-16 h-16 grid place-items-center rounded-xl text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition flex flex-col gap-1"
+              @click="addShape('rect'); shapesOpen = false">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/></svg>
+        <span class="text-[10px] font-semibold">Rectangle</span>
+      </button>
+      <button class="w-16 h-16 grid place-items-center rounded-xl text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition flex flex-col gap-1"
+              @click="addShape('ellipse'); shapesOpen = false">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="12" rx="9" ry="7"/></svg>
+        <span class="text-[10px] font-semibold">Ellipse</span>
+      </button>
+    </div>
+
+    <!-- pill strumenti (va a capo su schermi stretti) -->
+    <div class="tool-dock flex flex-wrap items-center justify-center gap-0.5 rounded-2xl bg-white/95 backdrop-blur shadow-panel px-2 py-1.5 max-w-[calc(100vw-1.5rem)]">
+      <button class="w-10 h-10 grid place-items-center rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-900 active:scale-95 transition" title="Sticky note"
+              @click="addNote()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v10l-6 6H4V4z"/><path d="M20 14h-6v6"/></svg>
+      </button>
+      <button class="w-10 h-10 grid place-items-center rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-900 active:scale-95 transition" title="Text box"
+              @click="addText()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6V4h16v2"/><path d="M12 4v16"/><path d="M9 20h6"/></svg>
+      </button>
+      <button class="w-10 h-10 grid place-items-center rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-900 active:scale-95 transition" title="Shapes"
+              @click="shapesOpen = !shapesOpen; emojiOpen = false">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><circle cx="8" cy="12" r="6"/><rect x="13" y="5" width="8" height="14" rx="1.5"/></svg>
+      </button>
+      <span class="w-px h-6 bg-slate-200 mx-1"></span>
+      <button class="w-10 h-10 grid place-items-center rounded-xl transition active:scale-95"
+              :class="tool === 'arrow' ? 'bg-indigo-600 text-white shadow-soft' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'"
+              title="Arrow (drag on canvas)" @click="tool = (tool === 'arrow' ? 'select' : 'arrow'); shapesOpen = false; emojiOpen = false">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19 19 5"/><path d="M13 5h6v6"/></svg>
+      </button>
+      <button class="w-10 h-10 grid place-items-center rounded-xl transition active:scale-95"
+              :class="tool === 'line' ? 'bg-indigo-600 text-white shadow-soft' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'"
+              title="Line (drag on canvas)" @click="tool = (tool === 'line' ? 'select' : 'line'); shapesOpen = false; emojiOpen = false">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="5" y1="19" x2="19" y2="5" stroke-dasharray="0"/></svg>
+      </button>
+      <span class="w-px h-6 bg-slate-200 mx-1"></span>
+      <button class="w-10 h-10 grid place-items-center rounded-xl text-lg hover:bg-slate-100 active:scale-95 transition" title="Emoji"
+              @click="emojiOpen = !emojiOpen; shapesOpen = false">🙂</button>
+      <button class="w-10 h-10 grid place-items-center rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-900 active:scale-95 transition" title="Upload image"
+              @click="imageReplaceId = null; $refs.fileImage.click()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-4.5-4.5L6 21"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== CONTROLLI ZOOM (colonna a destra su mobile, in basso a destra su desktop) ==================== -->
+<div class="absolute z-20 flex flex-col items-center gap-0.5 rounded-2xl bg-white/95 backdrop-blur shadow-panel ring-1 ring-black/5 px-1.5 py-1 right-3 top-1/2 -translate-y-1/2 sm:top-auto sm:bottom-5 sm:right-4 sm:translate-y-0 sm:flex-row">
+  <button class="w-8 h-8 grid place-items-center rounded-lg text-slate-500 hover:bg-slate-100 transition" title="Zoom out"
+          @click="zoomBy(1/1.25)">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+  </button>
+  <button class="h-8 min-w-[52px] px-1 grid place-items-center rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-100 transition tabular-nums"
+          title="Reset zoom to 100%" @click="resetZoom()" x-text="zoomPct()"></button>
+  <button class="w-8 h-8 grid place-items-center rounded-lg text-slate-500 hover:bg-slate-100 transition" title="Zoom in"
+          @click="zoomBy(1.25)">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+  </button>
+  <span class="h-px w-5 sm:w-px sm:h-5 bg-slate-200 my-0.5 sm:my-0 sm:mx-0.5"></span>
+  <button class="w-8 h-8 grid place-items-center rounded-lg text-slate-500 hover:bg-slate-100 transition" title="Fit all items"
+          @click="fitView()">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+  </button>
+</div>
+
+<!-- ==================== SUGGERIMENTO ==================== -->
+<div class="absolute bottom-6 left-4 z-10 hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/70 backdrop-blur text-[11px] text-slate-400 pointer-events-none">
+  <span><b class="text-slate-500">⌘V / Ctrl+V</b> paste</span><span>·</span>
+  <span>drag the background to pan</span><span>·</span>
+  <span><b class="text-slate-500">Ctrl</b>+scroll to zoom</span>
+</div>
+
+<!-- ==================== TOASTS ==================== -->
+<div class="absolute top-4 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-2 pointer-events-none">
+  <template x-for="t in toasts" :key="t.id">
+    <div x-transition.opacity.duration.200ms class="flex items-center gap-2 rounded-full bg-slate-900/90 text-white text-sm font-medium px-4 py-2 shadow-panel">
+      <span x-show="t.icon" x-text="t.icon"></span>
+      <span x-text="t.msg"></span>
+    </div>
+  </template>
+</div>
+
+<!-- Rinomina canvas -->
+<div x-cloak x-show="renameBox" class="absolute inset-0 z-50 grid place-items-center bg-slate-900/30 backdrop-blur-sm p-4"
+     @click.self="renameBox = null" @keydown.escape.window="renameBox = null">
+  <template x-if="renameBox">
+    <form @submit.prevent="saveRename()" class="w-full max-w-sm rounded-3xl bg-white shadow-panel p-6">
+      <h2 class="text-lg font-bold mb-4">Rename canvas</h2>
+      <input x-model="renameBox.title" x-init="$nextTick(() => { $el.focus(); $el.select(); })" maxlength="60" aria-label="Canvas name"
+             class="w-full rounded-xl border border-slate-200 px-3 py-2 focus:outline-none focus:border-indigo-400">
+      <div class="flex justify-end gap-2 mt-4">
+        <button type="button" @click="renameBox = null" class="px-4 py-2 rounded-xl bg-slate-100">Cancel</button>
+        <button type="submit" class="px-4 py-2 rounded-xl bg-indigo-600 text-white">Save</button>
+      </div>
+    </form>
+  </template>
+</div>
+
+<!-- ==================== MODALE AIUTO ==================== -->
+<div x-cloak x-show="helpOpen" class="absolute inset-0 z-50 grid place-items-center bg-slate-900/30 backdrop-blur-sm p-4"
+     @click.self="helpOpen = false" @keydown.escape.window="if (helpOpen) helpOpen = false">
+  <div class="w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-3xl bg-white shadow-panel p-6">
+    <div class="flex items-start justify-between mb-4">
+      <h2 class="text-lg font-bold">Shortcuts & gestures</h2>
+      <button class="w-8 h-8 grid place-items-center rounded-lg text-slate-400 hover:bg-slate-100 transition" @click="helpOpen = false">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="text-sm text-slate-600 divide-y divide-slate-100">
+      <p class="py-2 text-xs text-slate-500">Use Ctrl instead of ⌘ on Windows and Linux.</p>
+      <div class="flex justify-between py-2"><span>Paste images, text or links</span><b class="text-slate-800">⌘V</b></div>
+      <div class="flex justify-between py-2"><span>Undo / Redo</span><b class="text-slate-800">⌘Z / ⇧⌘Z</b></div>
+      <div class="flex justify-between py-2"><span>Duplicate selection</span><b class="text-slate-800">⌘D</b></div>
+      <div class="flex justify-between py-2"><span>Delete selection</span><b class="text-slate-800">⌫</b></div>
+      <div class="flex justify-between py-2"><span>Select all</span><b class="text-slate-800">⌘A</b></div>
+      <div class="flex justify-between py-2"><span>Edit any item</span><b class="text-slate-800">Double-click · Enter</b></div>
+      <div class="flex justify-between py-2"><span>Group / Ungroup</span><b class="text-slate-800">⌘G / ⇧⌘G</b></div>
+      <div class="flex justify-between py-2"><span>Text width</span><b class="text-slate-800">Drag side handle · double-click to fit</b></div>
+      <div class="flex justify-between py-2"><span>Move selection</span><b class="text-slate-800">Arrow keys (⇧ = 10px)</b></div>
+      <div class="flex justify-between py-2"><span>Reset zoom to 100%</span><b class="text-slate-800">0</b></div>
+      <div class="flex justify-between py-2"><span>Pan canvas</span><b class="text-slate-800">Drag background · scroll · Space</b></div>
+      <div class="flex justify-between py-2"><span>Zoom</span><b class="text-slate-800">Ctrl / ⌘ + scroll · pinch</b></div>
+      <div class="flex justify-between py-2"><span>Multi-select</span><b class="text-slate-800">⇧ + drag background · ⇧ + click</b></div>
+      <div class="flex justify-between py-2"><span>Reorder tabs</span><b class="text-slate-800">Drag tab · Alt + ← / →</b></div>
+      <div class="flex justify-between py-2"><span>Close tab</span><b class="text-slate-800">Middle-click</b></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== MODALE MODIFICA LINK ==================== -->
+<div x-cloak x-show="editLinkBox" class="absolute inset-0 z-50 grid place-items-center bg-slate-900/30 backdrop-blur-sm p-4"
+     @click.self="editLinkBox = null" @keydown.escape.window="if (editLinkBox) editLinkBox = null">
+  <template x-if="editLinkBox">
+    <div class="w-full max-w-md rounded-3xl bg-white shadow-panel p-6">
+      <h2 class="text-lg font-bold mb-4">Edit link</h2>
+      <input x-model="editLinkBox.url" spellcheck="false" placeholder="https://…"
+             class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3 text-sm font-medium focus:outline-none focus:border-indigo-400 focus:bg-white transition"
+             @keydown.enter.prevent="saveLinkEdit()" @keydown.escape.prevent="editLinkBox = null">
+      <div class="flex justify-end gap-2 mt-4">
+        <button class="h-9 px-4 rounded-xl bg-slate-100 text-slate-600 text-sm font-semibold hover:bg-slate-200 transition"
+                @click="editLinkBox = null">Cancel</button>
+        <button class="h-9 px-4 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-500 active:scale-95 transition"
+                @click="saveLinkEdit()">Save</button>
+      </div>
+    </div>
+  </template>
+</div>
+
+<!-- ==================== MODALE CONFERMA ==================== -->
+<div x-cloak x-show="confirmBox" class="absolute inset-0 z-50 grid place-items-center bg-slate-900/30 backdrop-blur-sm p-4"
+     @click.self="confirmBox = null" @keydown.escape.window="if (confirmBox) confirmBox = null">
+  <div class="w-full max-w-sm rounded-3xl bg-white shadow-panel p-6">
+    <p class="text-sm text-slate-700 mb-5" x-text="confirmBox && confirmBox.msg"></p>
+    <div class="flex justify-end gap-2">
+      <button class="h-9 px-4 rounded-xl bg-slate-100 text-slate-600 text-sm font-semibold hover:bg-slate-200 transition" @click="confirmBox = null">Cancel</button>
+      <button class="h-9 px-4 rounded-xl bg-rose-600 text-white text-sm font-semibold hover:bg-rose-500 active:scale-95 transition" @click="confirmYes()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== ONBOARDING (prima visita) ==================== -->
+<div x-cloak x-show="onboarding" class="absolute inset-0 z-40 grid place-items-center bg-slate-900/25 backdrop-blur-[2px] p-4">
+  <div class="w-full max-w-md rounded-3xl bg-white shadow-panel p-7 text-center">
+    <img src="assets/moodboardy.png" width="112" height="112" alt="Moodboardy" class="mx-auto mb-4 w-28 h-28 object-contain">
+    <h1 class="font-display text-3xl font-semibold mb-2 tracking-tight">A home for your next obsession.</h1>
+    <p class="text-sm text-slate-500 mb-5">No sign-up. No noise. Just your ideas, saved in your browser.</p>
+    <div class="text-left text-sm text-slate-600 space-y-3 mb-6">
+      <div class="flex gap-3 items-start">
+        <span class="shrink-0 grid place-items-center w-8 h-8 rounded-xl bg-amber-50 text-amber-500 font-bold">⌘V</span>
+        <span><b>Paste</b> images, text or links straight from your clipboard.</span>
+      </div>
+      <div class="flex gap-3 items-start">
+        <span class="shrink-0 grid place-items-center w-8 h-8 rounded-xl bg-indigo-50 text-indigo-500">🖱️</span>
+        <span><b>Drag the background</b> to explore. Ctrl + scroll to zoom in on the details.</span>
+      </div>
+      <div class="flex gap-3 items-start">
+        <span class="shrink-0 grid place-items-center w-8 h-8 rounded-xl bg-emerald-50">🔗</span>
+        <span>Give each rabbit hole its own <b>canvas tab</b>. Export and import JSON to take it elsewhere.</span>
+      </div>
+    </div>
+    <button class="w-full h-11 rounded-xl bg-indigo-600 text-white font-semibold shadow-soft hover:bg-indigo-500 active:scale-[.98] transition"
+            @click="markSeen()">Make room for something good →</button>
+  </div>
+</div>
+
+<!-- input file nascosti -->
+<input type="file" accept="image/*" multiple class="hidden" x-ref="fileImage" @change="onImageFiles($event)">
+<input type="file" accept=".json,application/json" class="hidden" x-ref="fileImport" @change="importJSON($event)">
+
+</body>
+</html>

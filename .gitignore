@@ -1,2 +1,9 @@
 data/
 .DS_Store
+node_modules/
+package.json
+package-lock.json
+tailwind.config.cjs
+scripts/
+tests/
+assets/tailwind.css

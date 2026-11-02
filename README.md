@@ -78,15 +78,3 @@ Your boards are stored in your browser's IndexedDB, not on a server. There are n
 - **Stale tabs pause saving.** Each save atomically checks the previous workspace inside an IndexedDB transaction. If another window has changed it, saving pauses rather than overwriting it. Export any canvases you changed, then reload to get the latest saved workspace. Avoid simultaneous editing: this is not a collaborative editor.
 
 The interface follows your system's light/dark preference by default. Use the moon/sun button in the top-right pill to choose a theme; your manual choice is remembered in this browser. Dark mode uses neutral grays without recoloring your board's images or chosen colors.
-
-## Development
-
-The checked-in assets are ready for static hosting, including GitHub Pages. Node.js is only needed when developing:
-
-```sh
-npm ci
-npm test
-npm run build
-```
-
-Rebuild after changing utility classes or the Tailwind theme. `npm run build` compiles `assets/app.css` and copies the pinned Alpine.js distribution into `assets/vendor/`. Font files and their licenses are in `assets/fonts/`; third-party notices are in `assets/THIRD-PARTY.md`.

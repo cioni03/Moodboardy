@@ -6,7 +6,6 @@
 
 <p align="center">
   <strong>A little space for big ideas.</strong><br>
-  A whole canvas of possibilities.<br>
   Collect images, stray thoughts and things worth keeping — and make them yours.
 </p>
 

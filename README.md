@@ -18,9 +18,8 @@
   <img src="https://img.shields.io/badge/GitHub_Pages-ready-F2C9C8?style=flat-square&amp;labelColor=254E3B" alt="GitHub Pages ready">
 </p>
 
-<!-- Replace YOUR-USERNAME (and the repository name if needed) with your GitHub Pages address. -->
 <p align="center">
-  <a href="https://YOUR-USERNAME.github.io/moodboardy/">
+  <a href="https://cioni03.github.io/Moodboardy/">
     <img src="https://img.shields.io/badge/Open_Moodboardy_%E2%86%92-254E3B?style=for-the-badge" alt="Open Moodboardy online">
   </a>
 </p>
@@ -69,10 +68,26 @@ No feed to scroll. No account to create. Just an open space to play.
 
 ## 🏡 Your browser is home
 
-Your boards are stored in your browser's `localStorage`, not in an app database. There are no accounts, cloud sync, sharing links or server-side backups.
+Your boards are stored in your browser's IndexedDB, not on a server. There are no accounts, cloud sync, sharing links or server-side backups.
 
 - **Back up the boards you love.** Clearing site data or using private browsing can remove them. Export JSON regularly.
 - **New browser, new space.** Boards do not automatically follow you to another browser, device or website address. Use export and import to move them.
-- **Keep images light.** Browser storage is limited, usually to a few MB. If a save warning appears, export your work and reduce large images. Avoid editing the same site in multiple windows at once.
+- **Storage is larger, not unlimited.** IndexedDB can hold substantially more than localStorage, but its quota depends on the browser and available disk space. If a save warning appears, export your work and reduce large images. Wait for the saved indicator before closing the page; asynchronous writes cannot be guaranteed during shutdown. Avoid editing the same site in multiple windows at once.
 - **Local uploads travel better.** Images added by URL stay remote and may disappear. Upload files to include the images in your JSON backup.
-- **An internet connection is needed.** Fonts, Tailwind CSS and Alpine.js load from external CDNs; remote images also contact their hosts. Link cards do not fetch metadata or previews.
+- **No runtime CDN dependencies.** Fonts, compiled Tailwind CSS and Alpine.js are included locally. Remote images still need a connection and contact their hosts. Link cards do not fetch metadata or previews. Reopening the hosted site offline is not guaranteed: there is no service worker.
+- **Unreadable storage is protected.** If local data cannot be read, automatic saving is paused. Use **⋯ → Export recovery data** to download the untouched raw data, and **Export JSON** to back up the current canvas. Restore a valid backup only after keeping a copy of the recovery file; resetting site storage must be done explicitly in your browser.
+- **Stale tabs pause saving.** Each save atomically checks the previous workspace inside an IndexedDB transaction. If another window has changed it, saving pauses rather than overwriting it. Export any canvases you changed, then reload to get the latest saved workspace. Avoid simultaneous editing: this is not a collaborative editor.
+
+The interface follows your system's light/dark preference by default. Use the moon/sun button in the top-right pill to choose a theme; your manual choice is remembered in this browser. Dark mode uses neutral grays without recoloring your board's images or chosen colors.
+
+## Development
+
+The checked-in assets are ready for static hosting, including GitHub Pages. Node.js is only needed when developing:
+
+```sh
+npm ci
+npm test
+npm run build
+```
+
+Rebuild after changing utility classes or the Tailwind theme. `npm run build` compiles `assets/app.css` and copies the pinned Alpine.js distribution into `assets/vendor/`. Font files and their licenses are in `assets/fonts/`; third-party notices are in `assets/THIRD-PARTY.md`.
